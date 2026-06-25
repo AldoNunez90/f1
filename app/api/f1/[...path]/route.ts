@@ -6,7 +6,7 @@ import { fetchF1Data, isValidEndpoint } from '@/lib/services/f1Service';
  * Soporta: /api/f1/drivers, /api/f1/races, /api/f1/sessions, etc.
  * Con query parameters: /api/f1/laps?session_key=123
  */
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     // Construir el endpoint desde los params dinámicos
     const path = (await Promise.resolve(params)).path || [];
