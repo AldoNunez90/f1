@@ -9,8 +9,8 @@ import { fetchF1Data, isValidEndpoint } from '@/lib/services/f1Service';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   try {
     // Construir el endpoint desde los params dinámicos
-    const path = (await Promise.resolve(params)).path || [];
-    const endpoint = path.join('/');
+    const {path} = await params;
+    const endpoint = (path || []).join('/');
 
     if (!endpoint) {
       return NextResponse.json(
