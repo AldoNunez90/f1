@@ -4,16 +4,20 @@ import Link from 'next/link';
 import { useF1Data } from '@/lib/hooks/useF1Data';
 import Image from 'next/image';
 
+const driversConfig = {
+  endpoint: 'drivers',
+  queryParams: {session_key: 'latest'} 
+}
+
+const sessionsConfig = {
+  endpoint: 'sessions',
+  queryParams: {year: 2026}
+}
+
 export default function Home() {
-  const { data: drivers, loading: driversLoading } = useF1Data({
-    endpoint: 'drivers',
-    queryParams: { session_key: "latest" }, // Cargar una vez con la sesión más reciente para obtener el conteo total de pilotos sin actualizar constantemente
-  });
+  const { data: drivers, loading: driversLoading } = useF1Data(driversConfig);
   
-  const { data: sessions, loading: sessionsLoading } = useF1Data({
-    endpoint: 'sessions',
-    queryParams: { year: 2026}
-  });
+  const { data: sessions, loading: sessionsLoading } = useF1Data(sessionsConfig);
 
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
   const raceCount = 2;
@@ -102,7 +106,7 @@ export default function Home() {
             <div
               key={section.href}
               
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition hover:bg-gray-900 cursor-pointer"
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-xl transition hover:bg-gray-300 cursor-pointer"
             >
                <Image 
                   src={section.icon}

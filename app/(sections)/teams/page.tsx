@@ -17,11 +17,13 @@ interface TeamData {
   drivers: Driver[];
 }
 
-export default function TeamsPage() {
-  const { data, loading, error, refetch } = useF1Data({
+const driversConfig = {
     endpoint: 'drivers',
     queryParams: { session_key: 'latest' }, 
-  });
+  }
+
+export default function TeamsPage() {
+  const { data, loading, error, refetch } = useF1Data(driversConfig);
 
   if (loading) return <LoadingGrid />;
   if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;

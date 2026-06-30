@@ -101,9 +101,6 @@ export function getCountryFlag(countryCode: string | undefined): string {
 
   if (code.length !== 2) return '🌐';
 
-  const codePoints = code
-    .split('')
-    .map((char) => 127397 + char.charCodeAt(0));
   
   // Retorna la URL de la imagen de la bandera
   return `https://flagcdn.com/80x60/${code.toLowerCase()}.png`;

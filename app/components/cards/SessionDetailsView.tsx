@@ -5,6 +5,7 @@ import { LoadingSpinner } from "@/app/components/common/Loading";
 import { ErrorMessage } from "@/app/components/common/Error";
 import type { Session } from "@/app/(sections)/sessions/page";
 import { formatSessionType, getTeamGradient } from "@/lib/utils/formatters";
+import { useMemo } from "react";
 
 
 export interface SessionResult {
@@ -22,6 +23,11 @@ export interface SessionResult {
   dsq?: boolean;
 }
 
+const driversConfig = {
+    endpoint: 'drivers',
+    queryParams: { session_key: "latest" }, 
+    refetchInterval: 0, // Desactivar actualización automática: se carga una vez y queda fija
+  }
 
 /**
  * Vista detallada de una sesión con resultados procesados
@@ -29,16 +35,16 @@ export interface SessionResult {
 export default function SessionDetailsView({ session, onBack }: { session: Session; onBack: () => void }) {
   const sessionKey = session.session_key;
 
-const { data, loading, error, refetch} = useF1Data({
-    endpoint: "session_result",
-    queryParams: sessionKey ? { session_key: sessionKey } : undefined,
-  });
+  const sessionResultConfig = useMemo(()=>{
+    return {
+      endpoint: "session_result",
+      queryParams: sessionKey ? { session_key: sessionKey } : undefined,
+    } ;
+  },[sessionKey])
 
-  const { data: driverData, loading: loadingDriver, error: errorDriver } = useF1Data({
-    endpoint: 'drivers',
-    queryParams: { session_key: "latest" }, 
-    refetchInterval: 0, // Desactivar actualización automática: se carga una vez y queda fija
-  });
+const { data, loading, error, refetch} = useF1Data(sessionResultConfig);
+
+  const { data: driverData, loading: loadingDriver, error: errorDriver } = useF1Data(driversConfig);
 
   if (loading) return <LoadingSpinner />;
   if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;

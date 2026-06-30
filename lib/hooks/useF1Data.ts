@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface UseF1DataOptions {
   endpoint: string;
@@ -34,7 +34,7 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const buildUrl = () => {
+  const buildUrl = useCallback(() => {
     let url = `/api/f1/${endpoint}`;
 
     if (queryParams) {
@@ -46,19 +46,20 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
     }
 
     return url;
-  };
+  },[endpoint, queryParams]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(buildUrl());
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
-      }
-
+  const fetchData = useCallback(
+    async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const response = await fetch(buildUrl());
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.statusText}`);
+        }
+        
       const result = await response.json();
       setData(result.data);
     } catch (err) {
@@ -66,17 +67,31 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
     } finally {
       setLoading(false);
     }
-  };
+  }, [buildUrl]);
 
   useEffect(() => {
-    fetchData();
+    const initialFetchTimer = setTimeout(() => {
+      fetchData();
+    }, 0);
 
-    // Setup auto-refetch si se especifica intervalo
+    let intervalId: NodeJS.Timeout;
+    if (refetchInterval > 0) {
+      intervalId = setInterval(() => {
+        fetchData();
+      }, refetchInterval);
+    }
+
     if (refetchInterval > 0) {
       const interval = setInterval(fetchData, refetchInterval);
       return () => clearInterval(interval);
     }
-  }, [endpoint, JSON.stringify(queryParams), refetchInterval]);
+
+    return () => {
+      clearTimeout(initialFetchTimer);
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+  };}, [endpoint, refetchInterval, fetchData]);
 
   return {
     data,

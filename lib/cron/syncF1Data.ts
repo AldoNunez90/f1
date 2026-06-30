@@ -23,7 +23,7 @@ export function initF1CronJobs() {
           return;
         }
       } catch (e) {
-        console.warn('No se pudo verificar el marcador de fin, procediendo con sync normal');
+        console.warn('No se pudo verificar el marcador de fin, procediendo con sync normal', e);
       }
 
       console.log('🏁 GP activo detectado - sincronizando datos F1 cada 8 horas');

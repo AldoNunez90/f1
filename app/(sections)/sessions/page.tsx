@@ -34,14 +34,21 @@ export default function SessionsPage() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
 
   // Parámetros para la consulta de sesiones (GPs)
-  const queryParams = selectedYear ? { year: selectedYear } : { year: 2026 };
+  
+  
+  const sessionConfig = useMemo(()=>{
+    return{
+      endpoint: 'sessions',
+      queryParams: {year: selectedYear ? selectedYear : 2026 }
+    };
+    
+  }, [selectedYear])
 
-  const { data, loading, error, refetch } = useF1Data({
-    endpoint: "sessions",
-    queryParams,
-  });
+  const { data, loading, error, refetch } = useF1Data(sessionConfig);
 
-  const sessions = Array.isArray(data) ? data : [];
+  const sessions = useMemo(()=>
+   {return Array.isArray(data) ? data : [];}, [data]
+  )
 
   // Agrupar por año y ronda
   const groupedSessions = useMemo(() => {
@@ -101,7 +108,7 @@ export default function SessionsPage() {
     setSelectedSession(null);
   };
 
-  const handleSelectionGroup = (key) => {
+  const handleSelectionGroup = (key: string) => {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
@@ -167,7 +174,7 @@ export default function SessionsPage() {
             Volver a eventos
           </button>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {groupedSessions[selectedGroup].map((session, idx) => (
+            {groupedSessions[selectedGroup].map((session: Session, idx: number) => (
               <SessionCard
                 key={idx}
                 {...session}

@@ -23,24 +23,30 @@ interface Driver {
   full_name?: string;
 }
 
+const championshipTeamsConfig = {
+  endpoint: 'championship_teams',
+  queryParams: { session_key: 'latest' },
+}
+
+const championshipDriversConfig = {
+  endpoint: 'championship_drivers',
+  queryParams: { session_key: 'latest' },
+}
+
+const driversConfig = {
+  endpoint: 'drivers',
+    queryParams: { session_key: 'latest' },
+    refetchInterval: 0,
+}
+
 export default function ChampionshipPage() {
   const [showedChampionship, setShowedChampionship] = useState<'drivers' | 'teams'>('drivers');
 
-  const { data: teamData, loading: teamLoading, error: teamError, refetch: refetchTeams } = useF1Data<ChampionshipEntry[]>({
-    endpoint: 'championship_teams',
-    queryParams: { session_key: 'latest' },
-  });
+  const { data: teamData, loading: teamLoading, error: teamError, refetch: refetchTeams } = useF1Data<ChampionshipEntry[]>(championshipTeamsConfig);
 
-  const { data: championshipDriversData, loading: championshipDriversLoading, error: championshipDriversError, refetch: refetchDriversChampionship } = useF1Data<ChampionshipEntry[]>({
-    endpoint: 'championship_drivers',
-    queryParams: { session_key: 'latest' },
-  });
+  const { data: championshipDriversData, loading: championshipDriversLoading, error: championshipDriversError, refetch: refetchDriversChampionship } = useF1Data<ChampionshipEntry[]>(championshipDriversConfig);
 
-  const { data: driversData, loading: driversLoading, error: driversError } = useF1Data<Driver[]>({
-    endpoint: 'drivers',
-    queryParams: { session_key: 'latest' },
-    refetchInterval: 0,
-  });
+  const { data: driversData, loading: driversLoading, error: driversError } = useF1Data<Driver[]>(driversConfig);
 
   if (teamLoading || championshipDriversLoading || driversLoading) return <LoadingGrid />;
   if (teamError) return <ErrorMessage message={teamError.message} onRetry={refetchTeams} />;

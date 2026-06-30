@@ -16,6 +16,7 @@ interface SessionCardProps {
   circuit_short_name?: string;
   country_name?: string;
   is_open?: boolean;
+  is_cancelled?: boolean;
   year?: number;
   round?: number;
   onClick?: () => void;
@@ -23,15 +24,24 @@ interface SessionCardProps {
 export function SessionCard(props: SessionCardProps) {
   const [pendingInfoVisible, setPendingInfoVisible] = useState(false);
   const status = getSessionStatusBadge(props.date_start, props.date_end);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
 
-  const pendingDays = props.date_start ? Math.ceil((new Date(props.date_start).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+  const pendingDays = props.date_start && currentTime ? Math.ceil((new Date(props.date_start).getTime() - currentTime) / (1000 * 60 * 60 * 24)) : null;
   const pendingSessionLabel = formatSessionType(props.session_name).replace(/^[^A-Za-zÁÉÍÓÚÜÑ]+\s*/, '') || 'sesión';
   const pendingMessage = status.text.toLowerCase() === 'pendiente' && pendingDays !== null
     ? `Faltan ${pendingDays} día${pendingDays === 1 ? '' : 's'} para esta ${pendingSessionLabel.toLowerCase()}`
     : null;
 
   useEffect(() => {
-    setPendingInfoVisible(false);
+    const timer = setTimeout(() => {
+      setCurrentTime(Date.now());
+      setPendingInfoVisible(false);
+    }, 0);
+
+    // Es una buena práctica limpiar el timer si el componente se desmonta 
+    // o las props cambian rápidamente
+    return () => clearTimeout(timer);
+  
   }, [props.session_name, props.date_start, props.date_end]);
 
   const handleCardClick = () => {

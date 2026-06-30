@@ -5,15 +5,11 @@ import { getCacheTTL, getNextRacingWeekendDate } from '@/lib/utils/racingWeekend
 
 const OPEN_F1_API = 'https://api.openf1.org/v1';
 
-interface F1CacheEntry {
-  data: Record<string, unknown>;
-  lastUpdated: Date;
-}
 
 /**
  * Determina si los datos ya no necesitan actualizarse (fijos o finalizados)
  */
-export function isDataCompleted(endpoint: string, data: any): boolean {
+export function isDataCompleted(endpoint: string, data: unknown ): boolean {
   // 1. Pilotos: Se consideran fijos una vez guardados en MongoDB por primera vez
   if (endpoint === 'drivers') return true;
 
@@ -41,7 +37,7 @@ export function isDataCompleted(endpoint: string, data: any): boolean {
 export async function fetchF1Data(
   endpoint: string,
   queryParams?: Record<string, string | number>
-): Promise<any> {
+): Promise<string> {
   try {
     await connectDB();
 
@@ -66,7 +62,7 @@ export async function fetchF1Data(
       const cacheAge = now.getTime() - cached.lastUpdated.getTime();
 
       if (cacheAge < cacheTTL) {
-        return cached.data as Record<string, unknown>;
+        return cached.data as string;
       }
     }
 
@@ -102,7 +98,7 @@ export async function fetchF1Data(
       { upsert: true }
     );
 
-    return data as Record<string, unknown>;
+    return data as string;
   } catch (error) {
     // Si hay error, intentar retornar datos en caché aunque estén expirados
     const cacheKey = queryParams
@@ -118,7 +114,7 @@ export async function fetchF1Data(
         console.warn(
           `Error fetching ${cacheKey}, using stale cache from ${cached.lastUpdated}`
         );
-        return cached.data as Record<string, unknown>;
+        return cached.data as string;
       }
     } catch (cacheError) {
       console.error('Error reading cache:', cacheError);
@@ -153,5 +149,5 @@ export const AVAILABLE_ENDPOINTS = [
 export function isValidEndpoint(endpoint: string): boolean {
   // Permitir endpoints con query parameters
   const baseEndpoint = endpoint.split('?')[0];
-  return AVAILABLE_ENDPOINTS.includes(baseEndpoint as any);
+  return (AVAILABLE_ENDPOINTS as readonly string[]).includes(baseEndpoint);
 }
