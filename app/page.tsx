@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { useF1Data } from '@/lib/hooks/useF1Data';
 import { useRssFeed } from '@/lib/hooks/useRssFeed';
+import { useVideoFeed } from '@/lib/hooks/useVideoFeed';
 import Image from 'next/image';
+import { VideoCard } from '@/app/components/cards/VideoCard';
 
 const driversConfig = {
   endpoint: 'drivers',
@@ -36,11 +38,18 @@ export default function Home() {
   const { data: drivers, loading: driversLoading } = useF1Data(driversConfig);
   const { data: sessions, loading: sessionsLoading } = useF1Data(sessionsConfig);
   const { data: news, loading: newsLoading, error: newsError } = useRssFeed();
+  const { data: videos, loading: videosLoading, error: videosError } = useVideoFeed();
   
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
   const raceCount = 2;
   const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
   const newsItems = Array.isArray(news) ? news.slice(0, 3) : [];
+  // Select the 3 most recent videos across all configured channels
+  const videoItems = Array.isArray(videos)
+    ? [...videos]
+        .sort((a, b) => (Date.parse(b.published || '') || 0) - (Date.parse(a.published || '') || 0))
+        .slice(0, 3)
+    : [];
 
   const sections = [
     {
@@ -206,6 +215,42 @@ export default function Home() {
                   </div>
                 </div>
               </a>
+            ))
+          )}
+        </div>
+      </section>
+
+      {/* Videos Section */}
+      <section className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-xl">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Últimos videos</h2>
+            <p className="text-gray-600 dark:text-gray-300 mt-2 max-w-2xl">
+              La última publicación de cada uno de los canales configurados en video feed.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          {videosLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-96 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-700" />
+            ))
+          ) : videosError ? (
+            <div className="rounded-3xl bg-red-50 p-6 text-red-700 dark:bg-red-900/30 dark:text-red-200">
+              No se pudieron cargar los videos. Intenta de nuevo más tarde.
+            </div>
+          ) : (
+            videoItems.map((video) => (
+              <VideoCard
+                key={video.channelId}
+                title={video.title}
+                link={video.link}
+                channelName={video.channelName}
+                published={video.published}
+                description={video.description}
+                thumbnail={video.thumbnail}
+              />
             ))
           )}
         </div>

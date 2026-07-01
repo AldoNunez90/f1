@@ -12,11 +12,12 @@ export function Navbar() {
   const [hidden, setHidden] = useState(true);
 
   const links = [
-    { href: "/", label: "Inicio", url: "/home.png" },
-    { href: "/drivers", label: "Pilotos", url: "/cascoDrivers.png" },
-    { href: "/teams", label: "Equipos", url: "/teamsImg.png" },
-    { href: "/championship", label: "Campeonatos", url: "/banderaCuadros.png" },
-    { href: "/sessions", label: "Sesiones", url: "/sessionsImg.png" },
+    { href: "/", label: "Inicio" },
+    { href: "/novedades", label: "Novedades"},
+    { href: "/drivers", label: "Pilotos"},
+    { href: "/teams", label: "Equipos"},
+    { href: "/championship", label: "Campeonatos"},
+    { href: "/sessions", label: "Sesiones"},
   ];
 
   return (
@@ -80,12 +81,6 @@ export function Navbar() {
                         className="text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
                 "
                       >
-                        <Image
-                          src={link.url}
-                          alt={link.href}
-                          width={50}
-                          height={50}
-                        />
                         {link.label}
                       </Link>
                     </li>

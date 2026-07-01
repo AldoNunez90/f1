@@ -10,10 +10,13 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'media.formula1.com',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: '*.ytimg.com',
+      },
     ],
-},
+  },
 };
-
 
 export default nextConfig;
