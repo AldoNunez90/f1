@@ -60,18 +60,18 @@ if (typeof window !== "undefined") {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            👨‍🚗 Pilotos
+            Pilotos
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Total de pilotos: <span className="font-bold text-red-600">{drivers.length}</span>
+            Total de pilotos: <span className="font-bold text-cyan-600">{drivers.length}</span>
           </p>
         </div>
       <div className="flex items-center gap-4">
         <p>Ordenar por:</p>
-        <select name="pilotsOrder" id="pilotsOrder"  className="px-8 py-3 border-2 border-white text-white font-bold rounded-lg hover:bg-gray-700 transition" onChange={(e) => setOrder(e.target.value)} value={order}>
-          <option value="number">Número</option>
-          <option value="name">Apellido</option>
-          <option value="team">Equipo</option>
+        <select name="pilotsOrder" id="pilotsOrder"  className="px-8 py-3 border-2 border-gray-500 text-white bg-gray-600 font-bold rounded-lg hover:bg-gray-800" onChange={(e) => setOrder(e.target.value)} value={order}>
+          <option value="number" className='bg-gray-800'>Número</option>
+          <option value="name" className='bg-gray-800'>Apellido</option>
+          <option value="team" className='bg-gray-800'>Equipo</option>
         </select>
       </div>
           

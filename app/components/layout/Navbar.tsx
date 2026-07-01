@@ -1,21 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import Image from 'next/image';
+import Link from "next/link";
+import { useState } from "react";
+import Image from "next/image";
 /**
  * Navbar con navegación principal
  */
 export function Navbar() {
-
-const [hidden, setHidden ]= useState(true)
+  const [hidden, setHidden] = useState(true);
 
   const links = [
-    { href: '/', label: 'Inicio', url: '/home.png' },
-    { href: '/drivers', label: 'Pilotos', url: '/cascoDrivers.png' },
-    { href: '/teams', label: 'Equipos', url: '/teamsImg.png' },
-    { href: '/championship', label: 'Campeonatos', url: '/banderaCuadros.png' },
-    { href: '/sessions', label: 'Sesiones', url: '/sessionsImg.png' },
+    { href: "/", label: "Inicio", url: "/home.png" },
+    { href: "/drivers", label: "Pilotos", url: "/cascoDrivers.png" },
+    { href: "/teams", label: "Equipos", url: "/teamsImg.png" },
+    { href: "/championship", label: "Campeonatos", url: "/banderaCuadros.png" },
+    { href: "/sessions", label: "Sesiones", url: "/sessionsImg.png" },
   ];
 
   return (
@@ -24,8 +23,7 @@ const [hidden, setHidden ]= useState(true)
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <span className="text-2xl">🏎️</span>
-            <span className="text-gray-900 dark:text-white">F1 News</span>
+            <Image src={"/logo.png"} alt="logo" width={108} height={60.6} />
           </Link>
 
           {/* Links */}
@@ -36,38 +34,43 @@ const [hidden, setHidden ]= useState(true)
                 href={link.href}
                 className="text-gray-600 dark:text-gray-300 hover:cyan-500 dark:hover:text-cyan-600 transition font-medium text-sm"
               >
-             {link.label}
+                {link.label}
               </Link>
             ))}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden">
-            <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white" onClick={()=>setHidden(!hidden)}>
+            <button
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              onClick={() => setHidden(!hidden)}
+            >
               ☰
             </button>
-            <div className={`flex-col absolute top-16 right-5 ${hidden? 'hidden' :'flex'} py-2 w-1/2`}>
-            <ul className='flex flex-col' >
-              {links.map((link)=>(
-               <li key={link.href} className=''>
-               <Link
-                key={link.href}
-                href={link.href}
-                className='text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
-                '
-                >
-                  <Image 
-                  src={link.url}
-                  alt={link.href}
-                  width={50}
-                  height={50}
-                  />
-                  {link.label}
-                </Link>
-                  </li> 
-              ))}
-            </ul>
-              </div>
+            <div
+              className={`flex-col absolute top-16 right-5 ${hidden ? "hidden" : "flex"} py-2 w-1/2`}
+            >
+              <ul className="flex flex-col">
+                {links.map((link) => (
+                  <li key={link.href} className="">
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
+                "
+                    >
+                      <Image
+                        src={link.url}
+                        alt={link.href}
+                        width={50}
+                        height={50}
+                      />
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>

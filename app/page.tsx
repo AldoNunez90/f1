@@ -25,7 +25,7 @@ export default function Home() {
 
   const sections = [
     {
-      title: '👨‍🚗 Pilotos',
+      title: 'Pilotos',
       description: 'Conoce a todos los pilotos de la temporada',
       href: '/drivers',
       count: driverCount,
@@ -34,7 +34,7 @@ export default function Home() {
       loading: driversLoading,
     },
     {
-      title: '🏢 Equipos',
+      title: 'Equipos',
       description: 'Información completa de todos los equipos',
       href: '/teams',
       count: Math.ceil(driverCount / 2),
@@ -43,7 +43,7 @@ export default function Home() {
       loading: driversLoading,
     },
     {
-      title: '🏁 Campeonatos',
+      title: 'Campeonatos',
       description: 'Campeonatos de pilotos y equipos actualizados',
       href: '/championship',
       count: raceCount,
@@ -52,7 +52,7 @@ export default function Home() {
       loading: driversLoading,
     },
     {
-      title: '🎯 Sesiones',
+      title: 'Sesiones',
       description: 'Prácticas, clasificaciones y carreras',
       href: '/sessions',
       count: sessionCount,
@@ -70,10 +70,9 @@ export default function Home() {
         <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl"></div>
 
         <div className="relative z-10 flex flex-col max-w-1/3 m-5 bg-gray-600/30  rounded-2xl p-5">
-          {/* <div className="text-5xl mb-4">🏎️</div> */}
-          <h1 className="text-5xl font-bold mb-4 mt-4">F1 News</h1>
+          <h1 className="text-5xl font-bold mb-4 mt-4">F1 HUB</h1>
           <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line">
-           {`Tu fuente actualizada de datos de F1.`}
+           {`Tu fuente de datos de F1`}
           </p>
 
           <div className="flex gap-4 flex-wrap mb-10 ">
@@ -95,7 +94,7 @@ export default function Home() {
 
       {/* Stats Section */}
       <section>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">📊 Estadísticas Generales</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Estadísticas Generales</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {sections.map((section) => (
             <Link
@@ -135,7 +134,7 @@ export default function Home() {
 
       {/* Main Sections */}
       <section>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">🔍 Explora</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Explora</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {sections.map((section) => (
             <Link
@@ -164,7 +163,7 @@ export default function Home() {
 
       {/* Features Section */}
       <section className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">✨ Características</h2>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Características</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="flex gap-4">
             <div className="shrink-0">

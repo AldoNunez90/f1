@@ -61,10 +61,10 @@ export default function TeamsPage() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            🏢 Equipos
+            Equipos
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Total de equipos: <span className="font-bold text-red-600">{teams.length}</span>
+            Total de equipos: <span className="font-bold text-cyan-600">{teams.length}</span>
           </p>
         </div>
       </div>
