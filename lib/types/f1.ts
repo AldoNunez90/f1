@@ -38,9 +38,11 @@ export interface Race {
 
 export interface Session {
   session_key?: number;
+  session_name?: string;
   session_type?: 'Practice' | 'Qualifying' | 'Race' | 'SprintQualifying' | 'Sprint';
   date_start?: string;
   date_end?: string;
+  gmt_offset?: string;
   is_open?: boolean;
 }
 

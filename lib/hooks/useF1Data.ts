@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 interface UseF1DataOptions {
   endpoint: string;
   queryParams?: Record<string, string | number>;
-  refetchInterval?: number; // en ms, solo se ejecuta si está en fin de semana de carrera
+  refetchInterval?: number; // en ms, solo se ejecuta si se requiere recarga automática explícita
 }
 
 interface UseF1DataReturn<T> {
@@ -26,10 +26,11 @@ interface UseF1DataReturn<T> {
  * const { data, loading, error } = useF1Data({
  *   endpoint: 'laps',
  *   queryParams: { session_key: 9158 },
+ *   refetchInterval: 10000,
  * });
  */
 export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataReturn<T> {
-  const { endpoint, queryParams, refetchInterval = 300000 } = options;
+  const { endpoint, queryParams, refetchInterval = 0 } = options;
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -53,37 +54,32 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
       try {
         setLoading(true);
         setError(null);
-        
+
         const response = await fetch(buildUrl());
-        
+
         if (!response.ok) {
           throw new Error(`API error: ${response.statusText}`);
         }
-        
-      const result = await response.json();
-      setData(result.data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-    } finally {
-      setLoading(false);
-    }
-  }, [buildUrl]);
+
+        const result = await response.json();
+        setData(result.data);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Unknown error'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildUrl]
+  );
 
   useEffect(() => {
     const initialFetchTimer = setTimeout(() => {
       fetchData();
     }, 0);
 
-    let intervalId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout | undefined;
     if (refetchInterval > 0) {
-      intervalId = setInterval(() => {
-        fetchData();
-      }, refetchInterval);
-    }
-
-    if (refetchInterval > 0) {
-      const interval = setInterval(fetchData, refetchInterval);
-      return () => clearInterval(interval);
+      intervalId = setInterval(fetchData, refetchInterval);
     }
 
     return () => {
@@ -91,7 +87,8 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
       if (intervalId) {
         clearInterval(intervalId);
       }
-  };}, [endpoint, refetchInterval, fetchData]);
+    };
+  }, [fetchData, refetchInterval]);
 
   return {
     data,

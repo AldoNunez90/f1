@@ -32,6 +32,50 @@ export function formatDateTime(dateString: string | undefined): string {
   }
 }
 
+function parseGmtOffsetToMinutes(offset?: string): number | null {
+  if (!offset || typeof offset !== 'string') return null;
+  const normalized = offset.trim();
+  const match = normalized.match(/^([+-])?(\d{2}):(\d{2}):(\d{2})$/);
+  if (!match) return null;
+  const sign = match[1] === '-' ? -1 : 1;
+  const hours = Number(match[2]);
+  const minutes = Number(match[3]);
+  const seconds = Number(match[4]);
+  return sign * (hours * 60 + minutes + seconds / 60);
+}
+
+export function formatDateTimeWithOffset(dateString: string | undefined, gmtOffset?: string): string {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+
+  const offsetMinutes = parseGmtOffsetToMinutes(gmtOffset);
+  const localDate = offsetMinutes === null ? date : new Date(date.getTime() + offsetMinutes * 60000);
+
+  return localDate.toLocaleString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function formatArgentinaDateTime(dateString: string | undefined): string {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return 'N/A';
+
+  return new Intl.DateTimeFormat('es-AR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/Argentina/Buenos_Aires',
+  }).format(date);
+}
+
 export function formatSessionType(type: string | undefined): string {
   const sessionTypes: Record<string, string> = {
     'Practice 1': '🏁 Práctica 1',
@@ -103,7 +147,7 @@ export function getCountryFlag(countryCode: string | undefined): string {
 
   
   // Retorna la URL de la imagen de la bandera
-  return `https://flagcdn.com/80x60/${code.toLowerCase()}.png`;
+  return `https://flagcdn.com/64x48/${code.toLowerCase()}.png`;
 }
 export function formatNumber(num: number | undefined, decimals = 2): string {
   if (num === undefined || num === null) return 'N/A';

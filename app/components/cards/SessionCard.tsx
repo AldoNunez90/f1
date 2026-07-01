@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { formatDate, formatSessionType, getSessionStatusBadge } from '@/lib/utils/formatters';
+import {
+  formatDate,
+  formatDateTimeWithOffset,
+  formatArgentinaDateTime,
+  formatSessionType,
+  getSessionStatusBadge,
+} from '@/lib/utils/formatters';
 
 interface SessionCardProps {
   session_key?: number;
@@ -10,6 +16,7 @@ interface SessionCardProps {
   meeting_key?: number;
   date_start?: string;
   date_end?: string;
+  gmt_offset?: string;
   location?: string;
   circuit_name?: string;
   country_code?: string;
@@ -102,12 +109,17 @@ export function SessionCard(props: SessionCardProps) {
         {/* Fechas */}
         <div className="space-y-3">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">FECHA:</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">HORARIO LOCAL</p>
             <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
-              {formatDate(props.date_start)}
+              {formatDateTimeWithOffset(props.date_start, props.gmt_offset)}
             </p>
           </div>
-         
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">HORA ARGENTINA</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white mt-1">
+              {formatArgentinaDateTime(props.date_start)}
+            </p>
+          </div>
         </div>
 
         {/* Info Grid */}

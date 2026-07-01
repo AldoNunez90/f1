@@ -4,8 +4,14 @@ import { useF1Data } from "@/lib/hooks/useF1Data";
 import { SessionCard } from "@/app/components/cards/SessionCard";
 import { LoadingGrid } from "@/app/components/common/Loading";
 import { ErrorMessage, EmptyState } from "@/app/components/common/Error";
-import { useState, useMemo } from "react";
-import { getCountryFlag, formatDate } from "@/lib/utils/formatters";
+import { useEffect, useState, useMemo } from "react";
+import {
+  getCountryFlag,
+  formatDate,
+  formatDateTimeWithOffset,
+  formatArgentinaDateTime,
+  formatSessionType,
+} from "@/lib/utils/formatters";
 import Image from "next/image";
 import SessionDetailsView from "@/app/components/cards/SessionDetailsView";
 import { circuits } from "@/lib/data/circuits";
@@ -17,6 +23,7 @@ export interface Session {
   meeting_key?: number;
   date_start?: string;
   date_end?: string;
+  gmt_offset?: string;
   location?: string;
   circuit_name?: string;
   country_code?: string;
@@ -32,6 +39,16 @@ export default function SessionsPage() {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    const handleReset = () => {
+      setSelectedGroup(null);
+      setSelectedSession(null);
+    };
+
+    window.addEventListener("resetSessionsView", handleReset);
+    return () => window.removeEventListener("resetSessionsView", handleReset);
+  }, []);
 
   // Parámetros para la consulta de sesiones (GPs)
   
@@ -49,7 +66,6 @@ export default function SessionsPage() {
   const sessions = useMemo(()=>
    {return Array.isArray(data) ? data : [];}, [data]
   )
-
   // Agrupar por año y ronda
   const groupedSessions = useMemo(() => {
     return sessions.reduce(
@@ -71,6 +87,57 @@ export default function SessionsPage() {
       return dateA - dateB;
     });
   }, [groupedSessions]);
+
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  const nextSession = useMemo(() => {
+    const validSessions = sessions
+      .filter((session) => session.date_start)
+      .sort(
+        (a, b) =>
+          new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
+      );
+
+    const liveSession = validSessions.find((session) => {
+      const start = new Date(session.date_start!).getTime();
+      const end = session.date_end ? new Date(session.date_end).getTime() : null;
+      return start <= now && (end === null || now <= end);
+    });
+
+    return (
+      liveSession ||
+      validSessions.find((session) => new Date(session.date_start!).getTime() > now) ||
+      validSessions[0]
+    );
+  }, [sessions, now]);
+
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timerId);
+  }, []);
+
+  const countdown = useMemo(() => {
+    if (!nextSession?.date_start) {
+      return 'No disponible';
+    }
+
+    const targetTime = new Date(nextSession.date_start).getTime();
+    const diff = targetTime - now;
+
+    if (diff <= 0) {
+      return 'En curso o finalizada';
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+  }, [nextSession, now]);
 
   const circuitInfo = useMemo(() => {
     if (!selectedGroup) return null;
@@ -95,9 +162,6 @@ export default function SessionsPage() {
     );
   }
 
-  if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-    }
 
   const handleBackToGroups = () => {
     setSelectedGroup(null);
@@ -115,8 +179,7 @@ export default function SessionsPage() {
     setSelectedGroup(key);
   };
 
-  console.log(circuitInfo);
-
+  console.log(selectedSession)
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -143,7 +206,7 @@ export default function SessionsPage() {
               setSelectedSession(null);
             }}
             value={selectedYear || 2026}
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-red-500 outline-none transition cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-600 outline-none transition cursor-pointer"
           >
             <option value={2026}>2026</option>
             <option value={2025}>2025</option>
@@ -152,6 +215,49 @@ export default function SessionsPage() {
           </select>
         </div>
       </div>
+
+      {!selectedGroup && !selectedSession && nextSession ? (
+        <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-600">Próxima sesión</p>
+              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+                {formatSessionType(nextSession.session_name)}
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                {nextSession.circuit_name || nextSession.location || 'Lugar desconocido'}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-green-500/25 dark:bg-gray-800 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                  Cuenta regresiva
+                </p>
+                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {countdown}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                  Horario local
+                </p>
+                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
+                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
+                  Hora Argentina
+                </p>
+                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
+                  {formatArgentinaDateTime(nextSession.date_start)}
+                </p>
+              </div>
+             
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* FLUJO DE RENDERIZADO: 
           1. Detalle de sesión 
@@ -166,7 +272,7 @@ export default function SessionsPage() {
         <div className="space-y-6">
           <button
             onClick={handleBackToGroups}
-            className="flex items-center gap-2 text-red-600 hover:text-red-700 font-bold transition group"
+            className="flex items-center gap-2 text-cyan-600 hover:text-cyan-500 font-bold transition group"
           >
             <span className="group-hover:-translate-x-1 transition-transform">
               ←
@@ -246,19 +352,19 @@ export default function SessionsPage() {
                 className={
                   firstSession.is_cancelled
                     ? "cursor-not-allowed bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-transparent flex flex-col"
-                    : "cursor-pointer hover:ring-2 hover:ring-red-500 transition-all ring-roup bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-transparent flex flex-col"
+                    : "cursor-pointer hover:ring-2 hover:ring-cyan-500 transition-all ring-roup bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-transparent flex flex-col"
                 }
               >
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs text-red-600 uppercase tracking-widest bg-red-50 dark:bg-red-900/10 px-2 py-1 rounded">
+                  <span className="text-xs text-cyan-600 uppercase tracking-widest bg-cyan-50 dark:bg-cyan-900/10 px-2 py-1 rounded">
                     {formatDate(firstSession.date_start)}
                   </span>
                   <span className="text-2xl" title={firstSession.country_name}>
                     <Image
                       src={getCountryFlag(firstSession.country_code)}
                       alt={firstSession.country_name}
-                      width={30}
-                      height={15}
+                      width={32}
+                      height={24}
                     />
                   </span>
                 </div>
@@ -287,7 +393,7 @@ export default function SessionsPage() {
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     {firstSession.is_cancelled ? (
-                      <p className="text-xs text-red-600  tracking-widest px-2 py-1 rounded">
+                      <p className="text-xs text-cyan-600  tracking-widest px-2 py-1 rounded">
                         Sesión Cancelada
                       </p>
                     ) : (
@@ -295,7 +401,7 @@ export default function SessionsPage() {
                     )}
                   </span>
 
-                  <span className="text-red-600 group-hover:translate-x-1 transition-transform font-bold text-sm">
+                  <span className="text-cyan-600 group-hover:translate-x-1 transition-transform font-bold text-sm">
                     Ver detalles →
                   </span>
                 </div>

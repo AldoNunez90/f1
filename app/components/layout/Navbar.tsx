@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 /**
  * Navbar con navegación principal
  */
 export function Navbar() {
+  const pathname = usePathname();
   const [hidden, setHidden] = useState(true);
 
   const links = [
@@ -23,20 +25,30 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <Image src={"/logo.png"} alt="logo" width={108} height={60.6} />
+            <Image src={"/logo.png"} alt="logo" width={80} height={60} />
           </Link>
 
           {/* Links */}
           <div className="hidden md:flex items-center gap-8">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="text-gray-600 dark:text-gray-300 hover:cyan-500 dark:hover:text-cyan-600 transition font-medium text-sm"
-              >
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+                if (pathname === "/sessions" && link.href === "/sessions") {
+                  event.preventDefault();
+                  window.dispatchEvent(new CustomEvent("resetSessionsView"));
+                }
+              };
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={handleClick}
+                  className="text-gray-600 dark:text-gray-300 hover:cyan-500 dark:hover:text-cyan-600 transition font-medium text-sm"
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Mobile Menu Button */}
@@ -51,24 +63,34 @@ export function Navbar() {
               className={`flex-col absolute top-16 right-5 ${hidden ? "hidden" : "flex"} py-2 w-1/2`}
             >
               <ul className="flex flex-col">
-                {links.map((link) => (
-                  <li key={link.href} className="">
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
+                {links.map((link) => {
+                  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+                    if (pathname === "/sessions" && link.href === "/sessions") {
+                      event.preventDefault();
+                      window.dispatchEvent(new CustomEvent("resetSessionsView"));
+                    }
+                  };
+
+                  return (
+                    <li key={link.href} className="">
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={handleClick}
+                        className="text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
                 "
-                    >
-                      <Image
-                        src={link.url}
-                        alt={link.href}
-                        width={50}
-                        height={50}
-                      />
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
+                      >
+                        <Image
+                          src={link.url}
+                          alt={link.href}
+                          width={50}
+                          height={50}
+                        />
+                        {link.label}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

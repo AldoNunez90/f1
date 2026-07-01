@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useF1Data } from '@/lib/hooks/useF1Data';
+import { useRssFeed } from '@/lib/hooks/useRssFeed';
 import Image from 'next/image';
 
 const driversConfig = {
@@ -14,14 +15,32 @@ const sessionsConfig = {
   queryParams: {year: 2026}
 }
 
+function formatNewsDate(dateString?: string) {
+  if (!dateString) return 'Reciente';
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime())
+    ? 'Reciente'
+    : date.toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
+}
+
+function sanitizeDescription(description?: string) {
+  if (!description) return 'Ver noticia completa en Motorsport LAT.';
+  return description.replace(/<[^>]+>/g, '').trim();
+}
+
 export default function Home() {
   const { data: drivers, loading: driversLoading } = useF1Data(driversConfig);
-  
   const { data: sessions, loading: sessionsLoading } = useF1Data(sessionsConfig);
-
+  const { data: news, loading: newsLoading, error: newsError } = useRssFeed();
+  
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
   const raceCount = 2;
   const sessionCount = Array.isArray(sessions) ? sessions.length : 0;
+  const newsItems = Array.isArray(news) ? news.slice(0, 3) : [];
 
   const sections = [
     {
@@ -61,6 +80,7 @@ export default function Home() {
       loading: sessionsLoading,
     },
   ];
+
 
   return (
     <div className="space-y-12">
@@ -132,32 +152,62 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Main Sections */}
+      {/* News Section */}
       <section>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Explora</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-          {sections.map((section) => (
-            <Link
-              key={section.href}
-              href={section.href}
-              className="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition"
-            >
-              <div className={`absolute inset-0 bg-linear-to-br ${section.color}`}></div>
-              <div className="absolute inset-0 bg-black opacity-40 group-hover:opacity-30 transition"></div>
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Novedades</h2>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Últimas noticias de Motorsport LAT directamente desde su RSS.
+            </p>
+          </div>
+          <Link
+            href="/novedades"
+            className="inline-flex items-center rounded-full border border-cyan-600 px-5 py-3 text-sm font-semibold text-cyan-600 transition hover:bg-cyan-600 hover:text-white"
+          >
+            Ver más novedades
+          </Link>
+        </div>
 
-              <div className="relative z-10 p-8 h-full flex flex-col justify-between">
-                <div>
-                 
-                  <h3 className="text-2xl font-bold text-white mb-2">{section.title}</h3>
-                  <p className="text-red-100">{section.description}</p>
-                </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          {newsLoading ? (
+            Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="h-56 animate-pulse rounded-3xl bg-slate-200 dark:bg-slate-700" />
+            ))
+          ) : newsError ? (
+            <div className="rounded-3xl bg-red-50 p-6 text-red-700 dark:bg-red-900/30 dark:text-red-200">
+              No se pudieron cargar las novedades. Intenta de nuevo más tarde.
+            </div>
+          ) : (
+            newsItems.map((item) => (
+              <a
+                key={item.link}
+                href={item.link}
+                target="_blank"
+                rel="noreferrer"
+                className="group block rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:border-cyan-400 dark:border-gray-800 dark:bg-slate-950"
+              >
+                <div className="flex h-full flex-col justify-between gap-6">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                      {item.title}
+                    </h3>
+                    <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                      {sanitizeDescription(item.description).slice(0, 140)}
+                      {item.description && item.description.length > 140 ? '...' : ''}
+                    </p>
+                  </div>
 
-                <div className="mt-6 inline-flex items-center gap-2 text-white font-semibold">
-                  Explorar {section.loading ? '...' : `(${section.count})`} →
+                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                    <span>{formatNewsDate(item.pubDate)}</span>
+                    <span className="font-semibold text-cyan-600 dark:text-cyan-400">
+                      Ver en Motorsport →
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </a>
+            ))
+          )}
         </div>
       </section>
 
