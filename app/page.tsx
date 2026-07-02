@@ -229,6 +229,14 @@ export default function Home() {
               La última publicación de cada uno de los canales configurados en video feed.
             </p>
           </div>
+          <div>
+            <Link
+            href="/novedades#videos"
+            className="inline-flex items-center rounded-full border border-cyan-600 px-5 py-3 text-sm font-semibold text-cyan-600 transition hover:bg-cyan-600 hover:text-white"
+          >
+            Ver más videos
+          </Link>
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">

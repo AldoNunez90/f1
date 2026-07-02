@@ -63,7 +63,7 @@ export default async function NovedadesPage() {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-xl">
+      <section id="videos" className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-xl">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-cyan-600">Últimos videos</p>

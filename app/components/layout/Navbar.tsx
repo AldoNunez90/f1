@@ -18,6 +18,7 @@ export function Navbar() {
     { href: "/teams", label: "Equipos"},
     { href: "/championship", label: "Campeonatos"},
     { href: "/sessions", label: "Sesiones"},
+    { href: "/documents", label: "Documentos"},
   ];
 
   return (
