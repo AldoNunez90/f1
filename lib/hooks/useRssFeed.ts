@@ -7,6 +7,7 @@ export interface NewsItem {
   link: string;
   description?: string;
   pubDate?: string;
+  img?: string;
 }
 
 interface UseRssFeedReturn {

@@ -1,6 +1,9 @@
-import { fetchLatMotorsportRssItems } from '@/lib/services/rssService';
+import { fetchLatestNewsItems } from '@/lib/services/rssService';
 import { fetchLatestVideos } from '@/lib/services/videoService';
 import { VideoCard } from '@/app/components/cards/VideoCard';
+import Image from 'next/image';
+
+const NEWS_PAGE_LIMIT = 24;
 
 function formatNewsDate(dateString?: string) {
   if (!dateString) return 'Reciente';
@@ -16,13 +19,12 @@ function formatNewsDate(dateString?: string) {
 }
 
 function sanitizeDescription(description?: string) {
-  if (!description) return 'Ver noticia completa en Motorsport LAT.';
+  if (!description) return 'Ver noticia completa en la fuente original.';
   return description.replace(/<[^>]+>/g, '').trim();
 }
 
 export default async function NovedadesPage() {
-  const news = await fetchLatMotorsportRssItems(3);
-
+  const news = await fetchLatestNewsItems(NEWS_PAGE_LIMIT);
   const videos = await fetchLatestVideos();
 
   return (
@@ -31,7 +33,7 @@ export default async function NovedadesPage() {
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm uppercase tracking-[0.24em] text-cyan-600">Novedades</p>
-            <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-white">Últimas noticias de Motorsport LAT</h1>
+            <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-white">Últimas noticias de Fórmula 1</h1>
           </div>
         </div>
 
@@ -45,7 +47,17 @@ export default async function NovedadesPage() {
               className="group block rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:border-cyan-400 dark:border-gray-800 dark:bg-slate-950"
             >
               <div className="flex h-full flex-col justify-between gap-6">
+                <Image
+                  alt={item.title}
+                  src={item.img || '/landingImgAlfaRomeo.png'}
+                  width={300}
+                  height={190}
+                  className="h-48 w-full rounded-2xl object-cover"
+                />
                 <div>
+                  <div className="mb-3 inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
+                    {item.source ?? 'Fuente'}
+                  </div>
                   <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{item.title}</h2>
                   <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
                     {sanitizeDescription(item.description).slice(0, 140)}
@@ -55,7 +67,7 @@ export default async function NovedadesPage() {
 
                 <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
                   <span>{formatNewsDate(item.pubDate)}</span>
-                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">Ver en Motorsport →</span>
+                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">Ver noticia →</span>
                 </div>
               </div>
             </a>

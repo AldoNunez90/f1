@@ -30,7 +30,7 @@ function formatNewsDate(dateString?: string) {
 }
 
 function sanitizeDescription(description?: string) {
-  if (!description) return 'Ver noticia completa en Motorsport LAT.';
+  if (!description) return 'Ver noticia completa en la fuente original.';
   return description.replace(/<[^>]+>/g, '').trim();
 }
 
@@ -162,12 +162,12 @@ export default function Home() {
       </section>
 
       {/* News Section */}
-      <section>
+      <section className='p-5 shadow-xl rounded-3xl bg-yellow-400/20 dark:bg-yellow-400/60 '>
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Novedades</h2>
             <p className="text-gray-600 dark:text-gray-300 mt-2">
-              Últimas noticias de Motorsport LAT directamente desde su RSS.
+              Últimas noticias de Fórmula 1 combinadas desde varios RSS de alto interés.
             </p>
           </div>
           <Link
@@ -197,6 +197,13 @@ export default function Home() {
                 className="group block rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:border-cyan-400 dark:border-gray-800 dark:bg-slate-950"
               >
                 <div className="flex h-full flex-col justify-between gap-6">
+                  <Image
+                    src={item.img || '/landingImgAlfaRomeo.png'}
+                    alt={item.title}
+                    width={400}
+                    height={200}
+                    className='object-cover rounded-2xl'
+                  />
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                       {item.title}
@@ -207,10 +214,10 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center justify-between gap-3 text-sm text-slate-500 dark:text-slate-400">
                     <span>{formatNewsDate(item.pubDate)}</span>
                     <span className="font-semibold text-cyan-600 dark:text-cyan-400">
-                      Ver en Motorsport →
+                      Ver noticia →
                     </span>
                   </div>
                 </div>

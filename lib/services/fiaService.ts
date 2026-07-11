@@ -15,6 +15,7 @@ export interface FiaDocumentSummary {
   title: string;
   summary: string;
   spanishSummary: string;
+  fullText?: string;
   textExcerpt?: string;
   pageCount?: number;
   publishedAt?: string;
@@ -53,13 +54,14 @@ interface IFiaDocument {
   source: string;
   summary: string;
   spanishSummary: string;
+  fullText?: string;
   textExcerpt?: string;
   pageCount?: number;
   publishedAt: Date;
   lastFetched: Date;
   checksum: string;
   etag?: string;
-  lastModified?: string;
+  lastModified?: Date;
   metadata?: Record<string, unknown>;
   removed: boolean;
 }
@@ -108,21 +110,27 @@ function extractRelevantText(text: string): string {
     .replace(/\r/g, ' ')
     .trim();
 
-  const short = cleaned.split(' ').slice(0, 260).join(' ');
+  const short = cleaned.split(' ').join(' ');
   return short;
 }
 
-function buildSummaryFromText(text: string): string {
-  const sentences = text
-    .split(/(?<=[.?!])\s+(?=[A-ZÁÉÍÓÚÑ])/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+function normalizeText(text: string): string {
+  return text
+    .replace(/\r\n|\r|\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
-  if (sentences.length <= 4) {
-    return text.slice(0, 600);
+function buildDocumentTextFromRaw(text: string): string {
+  const normalized = normalizeText(text);
+
+  if (!normalized) {
+    return 'No se pudo extraer texto del PDF.';
   }
 
-  return sentences.slice(0, 4).join(' ');
+  return normalized
+    .replace(/([.?!])\s+(?=[A-ZÁÉÍÓÚÑ])/g, '$1\n\n')
+    .trim();
 }
 
 export async function parseFiaPdf(url: string, title: string) {
@@ -178,10 +186,10 @@ export async function parseFiaPdf(url: string, title: string) {
   
   const rawText = data.text || '';
   const pageCount = data.numpages;
-  const textExcerpt = extractRelevantText(rawText);
-  const summary = buildSummaryFromText(rawText);
-  
-  
+  const fullText = buildDocumentTextFromRaw(rawText);
+  const textExcerpt = extractRelevantText(fullText);
+  const summary = fullText;
+
   let spanishSummary = '';
   try {
     spanishSummary = await translateToSpanish(summary);
@@ -198,6 +206,7 @@ export async function parseFiaPdf(url: string, title: string) {
     source: 'FIA',
     summary,
     spanishSummary,
+    fullText,
     textExcerpt,
     pageCount,
     publishedAt,
@@ -224,6 +233,7 @@ export async function parseFiaPdf(url: string, title: string) {
 
 export async function syncFiaDocuments() {
   const documents: unknown[] = [];
+  await connectDB();
 
   for (const source of PDF_SOURCES) {
     try {
@@ -239,16 +249,16 @@ export async function syncFiaDocuments() {
         const html = await resp.text();
         const links = discoverPdfLinksFromHtml(html, source.url);
 
-        for (const link of links.slice(0, 8)) {
+        for (const link of links) {
           try {
             const existing = await FiaDocument.findOne({ url: link.url });
             if (existing) {
-              const updated = await parseFiaPdf(link.url, link.title ?? source.title);
-              documents.push(updated);
-            } else {
-              const doc = await parseFiaPdf(link.url, link.title ?? source.title);
-              documents.push(doc);
+              documents.push(existing);
+              continue;
             }
+
+            const doc = await parseFiaPdf(link.url, link.title ?? source.title);
+            documents.push(doc);
           } catch (pdfErr) {
             console.error(`Failed to parse discovered PDF ${link.url}:`, pdfErr);
           }
@@ -301,20 +311,42 @@ function discoverPdfLinksFromHtml(html: string, baseUrl: string): { url: string;
   }
 }
 
-export async function fetchFiaDocumentSummaries(limit = 5) {
+export interface FiaDocumentSummariesResponse {
+  documents: FiaDocumentSummary[];
+  total: number;
+}
+
+export async function fetchFiaDocumentSummaries(
+  options: { limit?: number; skip?: number } = {},
+): Promise<FiaDocumentSummariesResponse> {
+  await syncFiaDocuments();
   await connectDB();
 
-  const docs = await FiaDocument.find({ removed: false })
-    .sort({ lastFetched: -1 })
-    .limit(limit)
-    .lean();
+  const limit = options.limit ?? 10;
+  const skip = options.skip ?? 0;
 
-  return (docs as unknown as IFiaDocument[]).map((doc) => ({
-    url: doc.url,
-    title: doc.title,
-    summary: doc.summary,
-    spanishSummary: doc.spanishSummary,
-    pageCount: doc.pageCount,
-    lastFetched: doc.lastFetched.toISOString(),
-  }));
+  const [docs, total] = await Promise.all([
+    FiaDocument.find({ removed: false })
+      .sort({ publishedAt: 1, lastFetched: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    FiaDocument.countDocuments({ removed: false }),
+  ]);
+
+  return {
+    documents: (docs as unknown as IFiaDocument[]).map((doc) => ({
+      url: doc.url,
+      title: doc.title,
+      summary: doc.summary,
+      spanishSummary: doc.spanishSummary,
+      fullText: doc.fullText ?? doc.summary,
+      pageCount: doc.pageCount,
+      lastFetched: doc.lastFetched.toISOString(),
+      publishedAt: doc.publishedAt?.toISOString(),
+      lastModified: doc.lastModified?.toISOString(),
+      checksum: doc.checksum,
+    })),
+    total,
+  };
 }

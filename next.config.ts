@@ -15,6 +15,22 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.ytimg.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.motorsport.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'objetos.estaticos-marca.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.hearstapps.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.f1technical.net',
+      },
     ],
   },
 };

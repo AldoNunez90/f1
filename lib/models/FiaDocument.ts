@@ -6,6 +6,7 @@ export interface IFiaDocument {
   source?: string;
   summary: string;
   spanishSummary?: string;
+  fullText?: string;
   textExcerpt?: string;
   pageCount?: number;
   publishedAt?: Date;
@@ -37,6 +38,10 @@ const FiaDocumentSchema = new Schema<IFiaDocument>({
     required: true,
   },
   spanishSummary: {
+    type: String,
+    required: false,
+  },
+  fullText: {
     type: String,
     required: false,
   },

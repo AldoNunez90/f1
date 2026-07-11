@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
-import { fetchLatMotorsportRssItems } from '@/lib/services/rssService';
+import { fetchLatestNewsItems } from '@/lib/services/rssService';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const items = await fetchLatMotorsportRssItems(3);
+    const { searchParams } = new URL(request.url);
+    const requestedLimit = Number.parseInt(searchParams.get('limit') ?? '3', 10);
+    const safeLimit = Number.isFinite(requestedLimit) && requestedLimit > 0 ? requestedLimit : 3;
+
+    const items = await fetchLatestNewsItems(safeLimit);
 
     return NextResponse.json(
       {
