@@ -56,21 +56,22 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button
-              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white mr-2"
               onClick={() => setHidden(!hidden)}
             >
               ☰
             </button>
             <div
-              className={`flex-col absolute top-16 right-5 ${hidden ? "hidden" : "flex"} py-2 w-1/2`}
+              className={`flex-col absolute top-14 right-0 ${hidden ? "hidden" : "flex"} py-2 w-3/4`}
             >
-              <ul className="flex flex-col">
+              <ul className="flex flex-col bg-gray-800/95 rounded-b-3xl">
                 {links.map((link) => {
                   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
                     if (pathname === "/sessions" && link.href === "/sessions") {
                       event.preventDefault();
                       window.dispatchEvent(new CustomEvent("resetSessionsView"));
                     }
+                    setHidden(!hidden)
                   };
 
                   return (
@@ -79,7 +80,7 @@ export function Navbar() {
                         key={link.href}
                         href={link.href}
                         onClick={handleClick}
-                        className="text-gray-600 dark:text-gray-300 transirion font-medium text-sm flex justify-evenly mb-2 mt-2
+                        className="text-gray-800 dark:text-white transirion font-medium text-xl flex justify-evenly mb-2 mt-2 
                 "
                       >
                         {link.label}

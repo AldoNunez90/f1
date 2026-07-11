@@ -10,7 +10,7 @@ interface ErrorProps {
 
 export function ErrorMessage({ message = 'Error al cargar los datos', onRetry }: ErrorProps) {
   return (
-    <div className="flex items-center justify-center min-h-[200px]">
+    <div className="flex items-center justify-center min-h-50">
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="text-4xl">⚠️</div>
         <div>
@@ -40,7 +40,7 @@ export function EmptyState({
   icon?: string;
 }) {
   return (
-    <div className="flex items-center justify-center min-h-[200px]">
+    <div className="flex items-center justify-center min-h-50">
       <div className="flex flex-col items-center gap-4 text-center">
         <div className="text-4xl">{icon}</div>
         <div>

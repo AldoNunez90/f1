@@ -35,15 +35,15 @@ const championshipDriversConfig = {
 
 const driversConfig = {
   endpoint: 'drivers',
-    queryParams: { session_key: 'latest' },
-    refetchInterval: 0,
+  queryParams: { session_key: 'latest' },
+  refetchInterval: 0,
 }
 
 export default function ChampionshipPage() {
 
-  useEffect(()=>{
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  })
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+  }, []); // Se agregó el array de dependencias vacío para que corra solo al montar
 
   const [showedChampionship, setShowedChampionship] = useState<'drivers' | 'teams'>('drivers');
 
@@ -58,7 +58,6 @@ export default function ChampionshipPage() {
   if (championshipDriversError) return <ErrorMessage message={championshipDriversError.message} onRetry={refetchDriversChampionship} />;
   if (driversError) return <ErrorMessage message={driversError.message} />;
 
-    
   const teamChampionship = Array.isArray(teamData) ? [...teamData].sort((a, b) => (a.position_current ?? 0) - (b.position_current ?? 0)) : [];
   const driverChampionship = Array.isArray(championshipDriversData) ? [...championshipDriversData].sort((a, b) => (a.position_current ?? 0) - (b.position_current ?? 0)) : [];
   const drivers = Array.isArray(driversData) ? driversData : [];
@@ -74,79 +73,86 @@ export default function ChampionshipPage() {
   const hasNoData = showedChampionship === 'drivers' ? driverChampionship.length === 0 : teamChampionship.length === 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-6 px-4 sm:px-0">
+      {/* Cabecera Adaptable */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">🏁 Campeonatos</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+            🏁 Campeonatos
+          </h1>
         </div>
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
             onClick={() => setShowedChampionship('drivers')}
-            className={`px-4 py-2 rounded-md transition-all shadow-sm ${showedChampionship === 'drivers' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}>
+            className={`flex-1 sm:flex-none text-center px-4 py-2 rounded-md transition-all shadow-sm font-medium ${showedChampionship === 'drivers' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}>
             Pilotos
           </button>
           <button
             onClick={() => setShowedChampionship('teams')}
-            className={`px-4 py-2 rounded-md transition-all shadow-sm ${showedChampionship === 'teams' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}
+            className={`flex-1 sm:flex-none text-center px-4 py-2 rounded-md transition-all shadow-sm font-medium ${showedChampionship === 'teams' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}
           >
             Equipos
           </button>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
-        <div className="overflow-x-auto">
-          {hasNoData ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              {showedChampionship === 'drivers'
-                ? 'No hay datos de campeonato de pilotos disponibles.'
-                : 'No hay datos de campeonato de equipos disponibles.'}
+      {/* Contenedor Principal */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+        {hasNoData ? (
+          <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+            {showedChampionship === 'drivers'
+              ? 'No hay datos de campeonato de pilotos disponibles.'
+              : 'No hay datos de campeonato de equipos disponibles.'}
+          </div>
+        ) : (
+          /* El overflow-x-auto se coloca aquí para que el contenedor negro no se rompa */
+          <div className="overflow-x-auto w-full">
+            <div className="bg-black p-3 sm:p-6 rounded-2xl border-4 sm:border-8 border-zinc-900 shadow-2xl min-w-150 font-mono">
+              <table className="w-full text-cyan-400 border-separate" style={{ borderSpacing: '0 8px' }}>
+                <thead>
+                  <tr className="text-zinc-500 text-xxs sm:text-xs tracking-widest uppercase">
+                    <th className="pb-1 text-center pl-2 w-[10%]">Pos</th>
+                    <th className="pb-1 text-left pl-4 w-[50%]">{showedChampionship === 'drivers' ? 'Piloto' : 'Equipo'}</th>
+                    <th className="pb-1 text-right pr-4 w-[20%]">Pts</th>
+                    <th className="pb-1 text-right pr-4 w-[20%]">Sumados</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {showedChampionship === 'drivers'
+                    ? driverChampionship.map((driver) => {
+                        const pointsSumados = driver.points_current - driver.points_start;
+                        const driverNumber = driver.driver_number ?? 0;
+                        return (
+                          <tr key={driverNumber} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800">
+                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40">{driver.position_current}</td>
+                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate min-w-45 sm:max-w-none">
+                              {driverNameByNumber.get(driverNumber) || 'Desconocido'}
+                            </td>
+                            <td className="py-2 sm:py-3 pr-4 border-y-2 border-zinc-950 text-right text-white">{driver.points_current}</td>
+                            <td className="py-2 sm:py-3 pr-4 rounded-r-xl border-y-2 border-r-2 border-zinc-950 text-right text-emerald-400">
+                              {pointsSumados > 0 ? `+${pointsSumados}` : pointsSumados}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    : teamChampionship.map((team) => {
+                        const pointsSumados = team.points_current - team.points_start;
+                        return (
+                          <tr key={team.position_current} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800">
+                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40">{team.position_current}</td>
+                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate min-w-45 sm:max-w-none">{team.team_name}</td>
+                            <td className="py-2 sm:py-3 pr-4 border-y-2 border-zinc-950 text-right text-white">{team.points_current}</td>
+                            <td className="py-2 sm:py-3 pr-4 rounded-r-xl border-y-2 border-r-2 border-zinc-950 text-right text-emerald-400">
+                              {pointsSumados > 0 ? `+${pointsSumados}` : pointsSumados}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                </tbody>
+              </table>
             </div>
-          ) : (
-          <div className="bg-black p-4 sm:p-6 rounded-3xl border-8 border-zinc-900 shadow-2xl shadow-cyan-900/20 w-full  font-mono">
-
-            <table className="w-full text-cyan-400 border-separate" style={{ borderSpacing: '0 12px' }}>
-              <thead>
-            <tr className="text-zinc-500 text-xs md:text-sm tracking-widest uppercase">
-              <th className="pb-2 text-center pl-4 w-1/8">Pos</th>
-              <th className="pb-2 text-center w-1/2">{showedChampionship === 'drivers' ? 'Piloto' : 'Equipo'}</th>
-              <th className="pb-2 text-center pr-4 w-1/5">Pts</th>
-              <th className="px-6 py-4 text-center w-1/5">Puntos sumados</th>
-            </tr>
-          </thead>
-              <tbody>
-                {showedChampionship === 'drivers'
-                  ? driverChampionship.map((driver) => {
-                      const pointsSumados = driver.points_current - driver.points_start;
-                      const driverNumber = driver.driver_number ?? 0;
-                      return (
-                        <tr key={driverNumber} className="bg-zinc-900 text-2xl md:text-4xl uppercase font-bold tracking-widest shadow-inner transition-colors hover:bg-zinc-800">
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-x-4 border-black text-center">{driver.position_current}</td>
-                          <td className="py-4 pr-4 pl-4 rounded-xl border-y-4 border-x-4 border-black">
-                            {driverNameByNumber.get(driverNumber) || 'Desconocido'}
-                          </td>
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-x-4 border-black text-right">{driver.points_current}</td>
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-l-4 border-black text-right">{pointsSumados}</td>
-                        </tr>
-                      );
-                    })
-                  : teamChampionship.map((team) => {
-                      const pointsSumados = team.points_current - team.points_start;
-                      return (
-                        <tr key={team.position_current} className="bg-zinc-900 text-2xl md:text-4xl uppercase font-bold tracking-widest shadow-inner transition-colors hover:bg-zinc-800">
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-x-4 border-black text-center">{team.position_current}</td>
-                          <td className="py-4 pr-4 pl-4 rounded-xl border-y-4 border-x-4 border-black">{team.team_name}</td>
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-x-4 border-black text-right">{team.points_current}</td>
-                          <td className="py-4 pr-4 rounded-xl border-y-4 border-l-4 border-black text-right">{pointsSumados}</td>
-                        </tr>
-                      );
-                    })}
-              </tbody>
-            </table>
-            </div>
-          )}
-        </div>
-        
+          </div>
+        )}
       </div>
     </div>
   );

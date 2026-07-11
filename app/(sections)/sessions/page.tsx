@@ -88,6 +88,7 @@ export default function SessionsPage() {
     });
   }, [groupedSessions]);
 
+
   const [now, setNow] = useState<number>(() => Date.now());
 
   const nextSession = useMemo(() => {
@@ -97,6 +98,7 @@ export default function SessionsPage() {
         (a, b) =>
           new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
       );
+
 
     const liveSession = validSessions.find((session) => {
       const start = new Date(session.date_start!).getTime();
@@ -128,7 +130,7 @@ export default function SessionsPage() {
     const diff = targetTime - now;
 
     if (diff <= 0) {
-      return 'En curso o finalizada';
+      return 'Finalizada';
     }
 
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -178,8 +180,7 @@ export default function SessionsPage() {
     }
     setSelectedGroup(key);
   };
-
-  console.log(selectedSession)
+  
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -218,18 +219,26 @@ export default function SessionsPage() {
 
       {!selectedGroup && !selectedSession && nextSession ? (
         <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 ">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-600">Próxima sesión</p>
               <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
                 {formatSessionType(nextSession.session_name)}
               </h2>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-                {nextSession.circuit_name || nextSession.location || 'Lugar desconocido'}
+                
               </p>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-green-500/25 dark:bg-gray-800 p-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+           
+              <div onClick={()=>handleSelectionGroup(`${nextSession.year}-${nextSession.meeting_key}`)} className="rounded-2xl dark:bg-green-500/30 bg-green-600/80 text-center p-4 hover:ring-cyan-500">
+                <p className="uppercase tracking-[0.2em]">
+                  {nextSession.circuit_name || nextSession.location || 'Lugar desconocido'}
+                </p>
+                <p className="text-sm mt-2 text-cyan-800 dark:text-cyan-400">Ver datos</p>
+              </div>
+             
+            <div className="rounded-2xl bg-green-500/20  p-4">
                 <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
                   Cuenta regresiva
                 </p>

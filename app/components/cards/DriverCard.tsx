@@ -119,7 +119,7 @@ export function DriverCard(props: DriverCardProps) {
       {/* Content */}
       <div className="p-6">
         {/* Nombre y foto*/}
-        <div className="flex flex-col items-center" >
+        <div className="flex flex-col items-center max-h-[50vh] md:max-h-full overflow-y-hidden" >
           <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate">{name} </h3>
           <Image
           src={(() => {
@@ -130,7 +130,7 @@ export function DriverCard(props: DriverCardProps) {
           alt={name}
           width={320}
           height={921}
-          className="max-w-52 mt-4"
+          className="md:max-w-52 mt-4"
           loading="eager"
           />
         </div> 

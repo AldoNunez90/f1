@@ -94,13 +94,13 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-2xl bg-[url('../public/landingImgAlfaRomeo.png')] bg-center bg-no-repeat bg-cover y-16 text-white justify-items-end ">
+      <section className="min-h-96  relative overflow-hidden rounded-2xl bg-[url('/landingImgMobile.png')] md:bg-[url('/landingImgAlfaRomeo.png')] bg-center bg-no-repeat bg-cover  md:py-12 text-white justify-items-end ">
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl"></div>
         <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl"></div>
 
-        <div className="relative z-10 flex flex-col max-w-1/3 m-5 bg-gray-600/30  rounded-2xl p-5">
-          <h1 className="text-5xl font-bold mb-4 mt-4">F1 HUB</h1>
-          <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line">
+        <div className="hidden md:flex relative z-10  flex-col max-w-1/3 m-5 bg-gray-600/30  rounded-2xl p-5">
+          <h1 className=" text-5xl font-bold mb-4 mt-4">F1 HUB</h1>
+          <p className=" text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line">
            {`Tu fuente de datos de F1`}
           </p>
 
@@ -147,12 +147,10 @@ export default function Home() {
               ) : (
                 <>
                   <p className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                    {section.count}
+                    {section.count} {section.title.toLocaleLowerCase()}
                   </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    {section.title.split(' ')[1]}
-                  </p>
-                  <p>{"Ver todo ->"} </p> 
+                
+                  <p className='text-xl'>{"Ver todo →"} </p> 
                 </>
               )}
             </div>
@@ -166,13 +164,13 @@ export default function Home() {
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Novedades</h2>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
+            <p className="text-gray-600 dark:text-gray-100 mt-2">
               Últimas noticias de Fórmula 1 combinadas desde varios RSS de alto interés.
             </p>
           </div>
           <Link
             href="/novedades"
-            className="inline-flex items-center rounded-full border border-cyan-600 px-5 py-3 text-sm font-semibold text-cyan-600 transition hover:bg-cyan-600 hover:text-white"
+            className="text-2xl md:text-sm text-center items-center rounded-full border border-cyan-600 px-5 py-3  font-semibold text-cyan-600 transition dark:text-white dark:bg-gray-900 hover:bg-cyan-600 hover:text-white"
           >
             Ver más novedades
           </Link>
