@@ -1,7 +1,6 @@
 import cron from 'node-cron';
 import connectDB from '@/lib/db/connection';
 import { fetchF1Data, AVAILABLE_ENDPOINTS, isDataCompleted } from '@/lib/services/f1Service';
-import { syncFiaDocuments } from '@/lib/services/fiaService';
 import { isRacingWeekend } from '@/lib/utils/racingWeekend';
 
 /**
@@ -40,17 +39,7 @@ export function initF1CronJobs() {
     }
   });
 
-  // Cron para documentos FIA: 1 vez al día (3 AM)
-  cron.schedule('0 3 * * *', async () => {
-    console.log('📄 Sincronizando documentos FIA...');
-    try {
-      await connectDB();
-      await syncFiaDocuments();
-      console.log('✅ Sincronización de documentos FIA completada');
-    } catch (error) {
-      console.error('Error durante la sincronización de documentos FIA:', error);
-    }
-  });
+
 
   console.log('✅ F1 cron jobs initialized');
 }

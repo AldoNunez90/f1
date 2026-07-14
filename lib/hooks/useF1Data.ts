@@ -15,20 +15,6 @@ interface UseF1DataReturn<T> {
   refetch: () => Promise<void>;
 }
 
-/**
- * Hook para consumir datos de la API de F1
- *
- * @example
- * const { data, loading, error } = useF1Data({
- *   endpoint: 'drivers',
- * });
- *
- * const { data, loading, error } = useF1Data({
- *   endpoint: 'laps',
- *   queryParams: { session_key: 9158 },
- *   refetchInterval: 10000,
- * });
- */
 export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataReturn<T> {
   const { endpoint, queryParams, refetchInterval = 0 } = options;
   const [data, setData] = useState<T | null>(null);

@@ -20,8 +20,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "🏎️ F1 News - Últimas noticias de Fórmula 1",
-  description: "Mantente actualizado con los últimos datos de Fórmula 1: pilotos, equipos, carreras y sesiones",
+  title: "F1 HUB - Últimas noticias de Fórmula 1",
+  description: "Actualizaciones de las últimas novedades sobre F1",
+  openGraph: {
+    title: 'F1 HUB - Últimas noticias de Fórmula 1',
+    description: 'Actualizaciones de las últimas novedades sobre F1',
+    url: 'https://f1-xi-ten.vercel.app/',
+    siteName: 'F1 HUB',
+    images: [
+      {
+        url: 'https://f1-xi-ten.vercel.app/_next/image?url=%2Flogo.png&w=96&q=75', // Imagen de 1200x630 píxeles recomendada
+        width: 1200,
+        height: 630,
+        alt: 'Portada de Documentos FIA',
+      },
+    ],
+    locale: 'es_AR',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
