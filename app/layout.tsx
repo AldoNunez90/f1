@@ -29,9 +29,9 @@ export const metadata: Metadata = {
     siteName: 'F1 HUB',
     images: [
       {
-        url: 'https://f1-xi-ten.vercel.app/_next/image?url=%2Flogo.png&w=96&q=75', // Imagen de 1200x630 píxeles recomendada
-        width: 1200,
-        height: 630,
+        url: '/icon.png', 
+        width: 512,
+        height: 512,
         alt: 'Portada de Documentos FIA',
       },
     ],
