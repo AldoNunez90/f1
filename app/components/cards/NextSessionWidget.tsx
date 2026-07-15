@@ -104,10 +104,10 @@ export default function NextSessionWidget() {
     const sessionUrl = `/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}&session_key=${nextSession.session_key}`;
 
   return (
-    <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
+    <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
       <div className="flex flex-col gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-cyan-600">Próxima sesión</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-cyan-900">Próxima sesión</p>
           <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
             {formatSessionType(nextSession.session_name)}
           </h2>
