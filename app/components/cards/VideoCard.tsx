@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface VideoCardProps {
   title: string;
@@ -19,41 +20,39 @@ export function VideoCard({
   description,
   thumbnail,
 }: VideoCardProps) {
+  // Estado local para manejar si la miniatura de alta definición (maxresdefault) falla (404)
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
 
-  // 1. EXTRAER EL ID DEL VIDEO DE FORMA SEGURA (Evita links rotos y errores 500)
+  // 1. EXTRAER EL ID DEL VIDEO DE FORMA SEGURA
   const videoId = (() => {
     if (!link) return null;
-    // Intenta extraer el ID si es un formato standard o feed
     const matchStandard = link.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (matchStandard && matchStandard[1]) return matchStandard[1];
-
-    // Intenta buscar el ID si la URL viene de un feed RSS de YouTube
     const matchFeed = link.match(/[?&]v=([^&#]+)/);
     if (matchFeed && matchFeed[1]) return matchFeed[1];
-
-    // Fallback secundario si el string ya es el ID de 11 caracteres
     if (link.length === 11) return link;
-
     return null;
   })();
-  
-  // 2. CONSTRUIR URLS LIMPIAS Y VÁLIDAS PARA PRODUCCIÓN
-  // Generamos un enlace de reproducción directo que Google NUNCA va a bloquear con un 500
+
+  // 2. CONSTRUIR URLS DIRECTAS
   const cleanVideoLink = videoId 
-  ? `https://www.youtube.com/watch?v=${videoId}` 
-  : link; // Fallback al original si no es un video de YT
-  
-  // Autogeneramos la miniatura oficial de YouTube en alta definición
-  const cleanThumbnail = videoId 
-  ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` // Miniatura HD
-  : thumbnail; // Fallback al provisto por la prop
-  
-  // Fallback de miniatura de menor resolución por si el video no tiene HD (por ejemplo, transmisiones viejas)
+    ? `https://www.youtube.com/watch?v=${videoId}` 
+    : link;
+
+  // Miniatura de alta resolución (HQ/MaxRes) inicial
+  const defaultThumbnail = videoId 
+    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` 
+    : thumbnail;
+
+  // Miniatura estándar de respaldo garantizada por Google
   const fallbackThumbnail = videoId 
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : undefined;
 
-    // CONTROL DE ERRORES EN FECHAS
+  // Inicializamos el estado de la imagen en el render inicial si no ha cambiado por error
+  const currentSrc = imgSrc || defaultThumbnail;
+
+  // CONTROL DE ERRORES EN FECHAS
   const formattedDate = (() => {
     if (!published) return 'Reciente';
     const date = new Date(published);
@@ -64,24 +63,22 @@ export function VideoCard({
       year: 'numeric',
     });
   })();
-  
+
   return (
     <article className="group relative rounded-3xl border border-gray-200 bg-slate-50 shadow-md transition-all duration-300 hover:translate-y-1 hover:shadow-xl hover:border-cyan-500 dark:border-gray-800 dark:bg-slate-950 flex flex-col h-full overflow-hidden">
       
-      {/* Contenedor de la imagen optimizada */}
+      {/* Contenedor de la imagen */}
       <div className="relative h-56 w-full overflow-hidden bg-slate-200 dark:bg-slate-800">
-        {cleanThumbnail ? (
+        {currentSrc ? (
           <Image
-            src={cleanThumbnail}
+            src={currentSrc}
             alt={`Miniatura del video: ${title}`}
             fill
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            unoptimized 
             className="object-cover transition-transform duration-300 group-hover:scale-105"
-            // Manejo de error: Si maxresdefault.jpg falla (404), cargamos hqdefault.jpg que siempre existe
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              if (fallbackThumbnail && target.src !== fallbackThumbnail) {
-                target.src = fallbackThumbnail;
+            onError={() => {
+              if (fallbackThumbnail && currentSrc !== fallbackThumbnail) {
+                setImgSrc(fallbackThumbnail);
               }
             }}
           />
