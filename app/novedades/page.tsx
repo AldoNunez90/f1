@@ -26,7 +26,7 @@ function sanitizeDescription(description?: string) {
 export default async function NovedadesPage() {
   const news = await fetchLatestNewsItems(NEWS_PAGE_LIMIT);
   const videos = await fetchLatestVideos();
-
+  console.log(videos)
   return (
     <div className="space-y-8 md:py-8 sm:px-6 lg:px-8">
       <section className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8 shadow-xl">
@@ -94,7 +94,6 @@ export default async function NovedadesPage() {
               link={video.link}
               channelName={video.channelName}
               published={video.published}
-              description={video.description}
               thumbnail={video.thumbnail}
             />
           ))}

@@ -23,7 +23,6 @@ export function VideoCard({
   // 1. EXTRAER EL ID DEL VIDEO DE FORMA SEGURA (Evita links rotos y errores 500)
   const videoId = (() => {
     if (!link) return null;
-    
     // Intenta extraer el ID si es un formato standard o feed
     const matchStandard = link.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (matchStandard && matchStandard[1]) return matchStandard[1];
@@ -37,24 +36,24 @@ export function VideoCard({
 
     return null;
   })();
-
+  
   // 2. CONSTRUIR URLS LIMPIAS Y VÁLIDAS PARA PRODUCCIÓN
   // Generamos un enlace de reproducción directo que Google NUNCA va a bloquear con un 500
   const cleanVideoLink = videoId 
-    ? `https://www.youtube.com/watch?v=${videoId}` 
-    : link; // Fallback al original si no es un video de YT
-
+  ? `https://www.youtube.com/watch?v=${videoId}` 
+  : link; // Fallback al original si no es un video de YT
+  
   // Autogeneramos la miniatura oficial de YouTube en alta definición
   const cleanThumbnail = videoId 
-    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` // Miniatura HD
-    : thumbnail; // Fallback al provisto por la prop
-
+  ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` // Miniatura HD
+  : thumbnail; // Fallback al provisto por la prop
+  
   // Fallback de miniatura de menor resolución por si el video no tiene HD (por ejemplo, transmisiones viejas)
   const fallbackThumbnail = videoId 
     ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
     : undefined;
 
-  // CONTROL DE ERRORES EN FECHAS
+    // CONTROL DE ERRORES EN FECHAS
   const formattedDate = (() => {
     if (!published) return 'Reciente';
     const date = new Date(published);
@@ -65,7 +64,7 @@ export function VideoCard({
       year: 'numeric',
     });
   })();
-
+  
   return (
     <article className="group relative rounded-3xl border border-gray-200 bg-slate-50 shadow-md transition-all duration-300 hover:translate-y-1 hover:shadow-xl hover:border-cyan-500 dark:border-gray-800 dark:bg-slate-950 flex flex-col h-full overflow-hidden">
       
