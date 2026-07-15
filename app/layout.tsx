@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { initializeAppServices } from "@/lib/init";
 import { Navbar } from "@/app/components/layout/Navbar";
+import Script from "next/script";
 
 // Inicializar servicios del servidor
 initializeAppServices();
@@ -51,6 +52,28 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+
+
+        
+<Script async src="https://www.googletagmanager.com/gtag/js?id=G-42L0VV2SB5"
+ strategy="afterInteractive"/>
+
+
+<Script id="google-analytics"
+strategy="afterInteractive">
+  {
+    `
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    
+    gtag('config', 'G-42L0VV2SB5',{
+    page_path: window.location.pathname,
+  });
+  `}
+</Script>
+
+
         <Navbar />
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
           {children}

@@ -4,6 +4,7 @@ import { useF1Data } from '@/lib/hooks/useF1Data';
 import { TeamCard } from '@/app/components/cards/TeamCard';
 import { LoadingGrid } from '@/app/components/common/Loading';
 import { ErrorMessage, EmptyState } from '@/app/components/common/Error';
+import { useEffect } from 'react';
 
 interface Driver {
   first_name?: string;
@@ -18,18 +19,23 @@ interface TeamData {
 }
 
 const driversConfig = {
-    endpoint: 'drivers',
-    queryParams: { session_key: 'latest' }, 
-  }
+  endpoint: 'drivers',
+  queryParams: { session_key: 'latest' }, 
+}
 
 export default function TeamsPage() {
   const { data, loading, error, refetch } = useF1Data(driversConfig);
 
-  if (loading) return <LoadingGrid />;
-  if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
-  if (typeof window !== "undefined") {
+  // OPTIMIZACIÓN RENDIMIENTO Y PROCESOS DE REACT:
+  // Controlamos de forma segura el scroll al tope solo cuando la petición de carga finaliza con éxito.
+  useEffect(() => {
+    if (!loading && !error) {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
+  }, [loading, error]);
+
+  if (loading) return <LoadingGrid />;
+  if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
     
   const drivers = Array.isArray(data) ? data : [];
 
@@ -54,26 +60,28 @@ export default function TeamsPage() {
     name,
     drivers: teamDrivers,
   }));
-  console.log(teams);  
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Equipos
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Total de equipos: <span className="font-bold text-cyan-600">{teams.length}</span>
+          {/* OPTIMIZACIÓN DE ACCESIBILIDAD (CONTRASTE WCAG):
+              Cambiamos text-cyan-600 a text-cyan-700 en modo claro para que cumpla con las normas de contraste sobre fondos blancos/claros */}
+          <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">
+            Total de equipos: <span className="font-bold text-cyan-700 dark:text-cyan-400">{teams.length}</span>
           </p>
         </div>
       </div>
 
       {/* Grid de Equipos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teams.map((team: TeamData, idx: number) => (
+        {teams.map((team: TeamData) => (
           <TeamCard
-            key={idx}
+            key={team.name} // OPTIMIZACIÓN DE RENDERIZADO: Usamos el nombre único del equipo como key persistente en lugar del index del mapeo
             name={team.name}
             drivers={team.drivers}
           />

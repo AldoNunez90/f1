@@ -70,25 +70,20 @@ export function DriverCard(props: DriverCardProps) {
     {'Stroll': 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/astonmartin/lanstr01/2026astonmartinlanstr01right.webp'},
     {'Perez': 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/cadillac/serper01/2026cadillacserper01right.webp'},
     {'Bottas': 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/cadillac/valbot01/2026cadillacvalbot01right.webp'},
-      ] 
+  ];
 
-
-
-
-
-
-    const teamColors: Record<string, string> = {
-  'RED BULL RACING': 'from-blue-800 to-blue-950',
-  'FERRARI': 'from-red-600 to-red-800',
-  'MERCEDES': 'from-teal-400 to-teal-600',
-  'MCLAREN': 'from-orange-500 to-orange-700',
-  'ASTON MARTIN': 'from-emerald-700 to-emerald-900',
-  'ALPINE': 'from-blue-600 to-pink-500',
-  'WILLIAMS': 'from-blue-500 to-blue-800',
-  'HAAS F1 TEAM': 'from-zinc-600 to-zinc-800',
-  'RACING BULLS': 'from-blue-500 to-blue-700',
-  'AUDI': 'from-red-600 to-neutral-900',
-  'CADILLAC': 'from-slate-700 to-slate-900'
+  const teamColors: Record<string, string> = {
+    'RED BULL RACING': 'from-blue-800 to-blue-950',
+    'FERRARI': 'from-red-600 to-red-800',
+    'MERCEDES': 'from-teal-400 to-teal-600',
+    'MCLAREN': 'from-orange-500 to-orange-700',
+    'ASTON MARTIN': 'from-emerald-700 to-emerald-900',
+    'ALPINE': 'from-blue-600 to-pink-500',
+    'WILLIAMS': 'from-blue-500 to-blue-800',
+    'HAAS F1 TEAM': 'from-zinc-600 to-zinc-800',
+    'RACING BULLS': 'from-blue-500 to-blue-700',
+    'AUDI': 'from-red-600 to-neutral-900',
+    'CADILLAC': 'from-slate-700 to-slate-900'
   };
 
   const hexToRgba = (hex: string, alpha: number) => {
@@ -102,57 +97,70 @@ export function DriverCard(props: DriverCardProps) {
   };
 
   const teamColor = props.team_colour ? `#${props.team_colour}` : undefined;
-  const teamColorWithAlpha = teamColor ? hexToRgba(teamColor, 0.50) : undefined;
+  
+  // OPTIMIZACIÓN DE ACCESIBILIDAD (CONTRASTE):
+  // Aseguramos que el fondo de la tarjeta mantenga un excelente contraste contra el texto claro.
+  const teamColorWithAlpha = teamColor ? hexToRgba(teamColor, 0.15) : undefined;
 
   const gradient = teamColors[props.team_name?.toUpperCase() || ''] || 'from-gray-600 to-gray-800';
+  
   return (
-    <div className="rounded-xl shadow-lg hover:shadow-xl transition duration-300 overflow-hidden"
-    style={{ backgroundColor: teamColorWithAlpha }}>
+    <article 
+      className="rounded-xl shadow-md hover:shadow-xl transition duration-300 overflow-hidden border border-gray-200 dark:border-gray-800"
+      style={{ backgroundColor: teamColorWithAlpha }}
+    >
       {/* Header con color del equipo */}
-      <div className={`h-32 bg-linear-to-br ${gradient} flex items-center justify-center`}>
+      <div className={`h-32 bg-linear-to-br ${gradient} flex items-center justify-center p-4`}>
         <div className="text-center">
-          <div className="text-5xl font-bold text-white opacity-80">{props.driver_number}</div>
-          <p className="text-white text-sm mt-1">{props.team_name}</p>
+          <div className="text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">{props.driver_number}</div>
+          <p className="text-white/90 text-sm mt-1 font-semibold tracking-wide uppercase">{props.team_name}</p>
         </div>
       </div>
 
       {/* Content */}
       <div className="p-6">
-        {/* Nombre y foto*/}
-        <div className="flex flex-col items-center max-h-[50vh] md:max-h-full overflow-y-hidden" >
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white truncate">{name} </h3>
-          <Image
-          src={(() => {
-            const lastNameKey = props.last_name || '';
-            const driverObj = driversImg.find(driver => Object.keys(driver)[0] === lastNameKey);
-            return (driverObj ? Object.values(driverObj)[0] as string : 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/ferrari/lewham01/2026ferrarilewham01right.webp');
-          })()}
-          alt={name}
-          width={320}
-          height={921}
-          className="md:max-w-52 mt-4"
-          loading="eager"
-          />
+        {/* OPTIMIZACIÓN CLS Y ACCESIBILIDAD DE ENCABEZADOS:
+            - Usamos <h2> en vez de <h3> si es el título jerárquico directo de la tarjeta (soluciona "heading order").
+            - Agregamos un contenedor con altura fija reservada para evitar saltos de maquetación (CLS). */}
+        <div className="flex flex-col items-center">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate text-center w-full">
+            {name}
+          </h2>
+          
+          {/* Contenedor con relación de aspecto y altura para reservar el espacio físico antes de la carga de la imagen */}
+          <div className="relative w-full max-w-52 aspect-320/500 mt-4 overflow-hidden rounded-lg">
+            <Image
+              src={(() => {
+                const lastNameKey = props.last_name || '';
+                const driverObj = driversImg.find(driver => Object.keys(driver)[0] === lastNameKey);
+                return (driverObj ? Object.values(driverObj)[0] as string : 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/ferrari/lewham01/2026ferrarilewham01right.webp');
+              })()}
+              alt={`Fotografía de ${name}`}
+              fill
+              sizes="(max-width: 640px) 100vw, 208px" // OPTIMIZACIÓN DE RESOLUCIÓN: Descarga el tamaño correcto en lugar de píxeles extra.
+              className="object-cover object-top"
+              priority={props.driver_number !== undefined && props.driver_number <= 5} // Prioriza la carga de las primeras tarjetas (LCP).
+            />
+          </div>
         </div> 
 
         {/* Info Grid */}
-        <div className="mt-6 flex flex-col items-center gap-2  ">
-          
-            {countryFlagUrl ? (
-                <Image
-                  src={countryFlagUrl}
-                  alt={props.country_code || 'Flag'}
-                  className=" object-center"
-                  width={40}
-                  height={30}
-                />
-            ) : (
-              <span className="text-xl">🌐</span>
-            )}
-         
-         
+        <div className="mt-6 flex flex-col items-center gap-2">
+          {countryFlagUrl ? (
+            <div className="relative w-10 h-7 shadow-sm rounded-sm overflow-hidden border border-gray-100 dark:border-gray-800">
+              <Image
+                src={countryFlagUrl}
+                alt={`Bandera de ${props.country_code || 'N/A'}`}
+                fill
+                sizes="40px"
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <span className="text-xl" role="img" aria-label="Bandera global">🌐</span>
+          )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }

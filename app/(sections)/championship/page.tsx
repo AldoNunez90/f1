@@ -40,18 +40,19 @@ const driversConfig = {
 }
 
 export default function ChampionshipPage() {
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  }, []); // Se agregó el array de dependencias vacío para que corra solo al montar
-
   const [showedChampionship, setShowedChampionship] = useState<'drivers' | 'teams'>('drivers');
 
   const { data: teamData, loading: teamLoading, error: teamError, refetch: refetchTeams } = useF1Data<ChampionshipEntry[]>(championshipTeamsConfig);
-
   const { data: championshipDriversData, loading: championshipDriversLoading, error: championshipDriversError, refetch: refetchDriversChampionship } = useF1Data<ChampionshipEntry[]>(championshipDriversConfig);
-
   const { data: driversData, loading: driversLoading, error: driversError } = useF1Data<Driver[]>(driversConfig);
+
+  // OPTIMIZACIÓN RENDIMIENTO Y PROCESOS DE REACT:
+  // Controlamos de forma segura el scroll al tope solo cuando finaliza con éxito la carga de las APIs de campeonato.
+  useEffect(() => {
+    if (!teamLoading && !championshipDriversLoading && !driversLoading && !teamError && !championshipDriversError && !driversError) {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  }, [teamLoading, championshipDriversLoading, driversLoading, teamError, championshipDriversError, driversError]);
 
   if (teamLoading || championshipDriversLoading || driversLoading) return <LoadingGrid />;
   if (teamError) return <ErrorMessage message={teamError.message} onRetry={refetchTeams} />;
@@ -75,29 +76,30 @@ export default function ChampionshipPage() {
   return (
     <div className="space-y-6 px-4 sm:px-0">
       {/* Cabecera Adaptable */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white flex items-center gap-3 tracking-tight">
             🏁 Campeonatos
           </h1>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto" role="group" aria-label="Filtro de campeonatos">
           <button
             onClick={() => setShowedChampionship('drivers')}
-            className={`flex-1 sm:flex-none text-center px-4 py-2 rounded-md transition-all shadow-sm font-medium ${showedChampionship === 'drivers' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}>
+            className={`flex-1 sm:flex-none text-center px-5 py-2.5 rounded-lg transition-all shadow-sm font-semibold text-sm ${showedChampionship === 'drivers' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100 hover:bg-cyan-600 hover:text-white'}`}
+          >
             Pilotos
           </button>
           <button
             onClick={() => setShowedChampionship('teams')}
-            className={`flex-1 sm:flex-none text-center px-4 py-2 rounded-md transition-all shadow-sm font-medium ${showedChampionship === 'teams' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white hover:bg-cyan-600 hover:text-white'}`}
+            className={`flex-1 sm:flex-none text-center px-5 py-2.5 rounded-lg transition-all shadow-sm font-semibold text-sm ${showedChampionship === 'teams' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100 hover:bg-cyan-600 hover:text-white'}`}
           >
             Equipos
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Contenedor Principal */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+      {/* Contenedor Principal con reserva de altura mínima (ELIMINA EL CLS) */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden min-h-125">
         {hasNoData ? (
           <div className="p-8 text-center text-gray-500 dark:text-gray-400">
             {showedChampionship === 'drivers'
@@ -105,16 +107,17 @@ export default function ChampionshipPage() {
               : 'No hay datos de campeonato de equipos disponibles.'}
           </div>
         ) : (
-          /* El overflow-x-auto se coloca aquí para que el contenedor negro no se rompa */
           <div className="overflow-x-auto w-full">
-            <div className="bg-black p-3 sm:p-6 rounded-2xl border-4 sm:border-8 border-zinc-900 shadow-2xl min-w-150 font-mono">
+            {/* Se define un padding interno uniforme y se optimiza la vista tipo 'pitboard' de pista */}
+            <div className="bg-black p-3 sm:p-6 rounded-2xl border-4 sm:border-8 border-zinc-950 shadow-2xl min-w-150 font-mono">
               <table className="w-full text-cyan-400 border-separate" style={{ borderSpacing: '0 8px' }}>
                 <thead>
-                  <tr className="text-zinc-500 text-xxs sm:text-xs tracking-widest uppercase">
-                    <th className="pb-1 text-center pl-2 w-[10%]">Pos</th>
-                    <th className="pb-1 text-left pl-4 w-[50%]">{showedChampionship === 'drivers' ? 'Piloto' : 'Equipo'}</th>
-                    <th className="pb-1 text-right pr-4 w-[20%]">Pts</th>
-                    <th className="pb-1 text-right pr-4 w-[20%]">Sumados</th>
+                  <tr className="text-zinc-500 text-xs tracking-widest uppercase">
+                    {/* OPTIMIZACIÓN ACCESIBILIDAD: Se agrega scope="col" a todas las cabeceras th */}
+                    <th scope="col" className="pb-1 text-center pl-2 w-[10%]">Pos</th>
+                    <th scope="col" className="pb-1 text-left pl-4 w-[50%]">{showedChampionship === 'drivers' ? 'Piloto' : 'Equipo'}</th>
+                    <th scope="col" className="pb-1 text-right pr-4 w-[20%]">Pts</th>
+                    <th scope="col" className="pb-1 text-right pr-4 w-[20%]">Sumados</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -123,9 +126,10 @@ export default function ChampionshipPage() {
                         const pointsSumados = driver.points_current - driver.points_start;
                         const driverNumber = driver.driver_number ?? 0;
                         return (
-                          <tr key={driverNumber} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800">
-                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40">{driver.position_current}</td>
-                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate min-w-45 sm:max-w-none">
+                          <tr key={`driver-${driverNumber}`} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800/80">
+                            {/* OPTIMIZACIÓN ACCESIBILIDAD SEMÁNTICA: scope="row" en el identificador */}
+                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40 font-black">{driver.position_current}</td>
+                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate max-w-70">
                               {driverNameByNumber.get(driverNumber) || 'Desconocido'}
                             </td>
                             <td className="py-2 sm:py-3 pr-4 border-y-2 border-zinc-950 text-right text-white">{driver.points_current}</td>
@@ -137,10 +141,11 @@ export default function ChampionshipPage() {
                       })
                     : teamChampionship.map((team) => {
                         const pointsSumados = team.points_current - team.points_start;
+                        const teamKey = team.team_name?.replace(/\s+/g, '-').toLowerCase() || team.position_current;
                         return (
-                          <tr key={team.position_current} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800">
-                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40">{team.position_current}</td>
-                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate min-w-45 sm:max-w-none">{team.team_name}</td>
+                          <tr key={`team-${teamKey}`} className="bg-zinc-900 text-lg sm:text-2xl md:text-3xl uppercase font-bold tracking-wider transition-colors hover:bg-zinc-800/80">
+                            <td className="py-2 sm:py-3 text-center rounded-l-xl border-y-2 border-l-2 border-zinc-950 text-white bg-zinc-950/40 font-black">{team.position_current}</td>
+                            <td className="py-2 sm:py-3 pl-4 border-y-2 border-zinc-950 truncate max-w-70">{team.team_name}</td>
                             <td className="py-2 sm:py-3 pr-4 border-y-2 border-zinc-950 text-right text-white">{team.points_current}</td>
                             <td className="py-2 sm:py-3 pr-4 rounded-r-xl border-y-2 border-r-2 border-zinc-950 text-right text-emerald-400">
                               {pointsSumados > 0 ? `+${pointsSumados}` : pointsSumados}

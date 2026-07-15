@@ -11,7 +11,6 @@ import {
   formatArgentinaDateTime,
 } from "@/lib/utils/formatters";
 
-// Reutilizamos la interfaz
 interface Session {
   session_key?: number;
   session_name?: string;
@@ -40,12 +39,22 @@ export default function NextSessionWidget() {
     queryParams: { year: 2026 },
   }), []);
 
-  const { data, loading, error, refetch } = useF1Data(sessionConfig);
+  const { data, loading, error, refetch } = useF1Data<Session[]>(sessionConfig);
 
   const sessions = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-  // Buscamos la próxima sesión activa o futura
+  // Timer para actualizar la cuenta regresiva en el hilo del navegador
+  useEffect(() => {
+    const timerId = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => window.clearInterval(timerId);
+  }, []);
+
+  // 1. RESOLUCIÓN DE BUG DE REACT: El useMemo solo calcula la sesión lógica
   const nextSession = useMemo(() => {
+    if (sessions.length === 0) return null;
+
     const validSessions = sessions
       .filter((session) => session.date_start)
       .sort(
@@ -59,28 +68,14 @@ export default function NextSessionWidget() {
       return start <= now && (end === null || now <= end);
     });
 
-     if (loading) return <LoadingGrid />;
-     if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
-     if (!nextSession) return null;
-
-   
-
     return (
       liveSession ||
       validSessions.find((session) => new Date(session.date_start!).getTime() > now) ||
       validSessions[0]
     );
-  }, [sessions, now, error, loading, refetch]);
+  }, [sessions, now]);
 
-  // Timer para actualizar la cuenta regresiva
-  useEffect(() => {
-    const timerId = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => window.clearInterval(timerId);
-  }, []);
-
-  // Lógica del countdown
+  // Lógica de cálculo de la cuenta regresiva
   const countdown = useMemo(() => {
     if (!nextSession?.date_start) return "No disponible";
 
@@ -97,60 +92,80 @@ export default function NextSessionWidget() {
     return `${days}d ${hours}h ${minutes}m ${seconds}s`;
   }, [nextSession, now]);
 
-  if (loading) return <LoadingGrid />;
+  // 2. RENDER CONDICIONAL SEGURO (Fuera de hooks y memorizaciones)
+  if (loading) {
+    return (
+      <div className="min-h-77.5 sm:min-h-55 flex items-center justify-center">
+        <LoadingGrid />
+      </div>
+    );
+  }
   if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
   if (!nextSession) return null;
 
-    const sessionUrl = `/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}&session_key=${nextSession.session_key}`;
+  const sessionUrl = `/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}&session_key=${nextSession.session_key}`;
 
   return (
-    <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-sm">
+    // OPTIMIZACIÓN CLS: Garantizamos una altura mínima reservada de renderizado
+    <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-6 shadow-xs min-h-77.5 sm:min-h-55">
       <div className="flex flex-col gap-4">
         <div>
-          <p className="text-sm uppercase tracking-[0.3em] text-cyan-900">Próxima sesión</p>
-          <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+          {/* OPTIMIZACIÓN ACCESIBILIDAD Y CONTRASTE: Cyan legible en tema claro y oscuro */}
+          <p className="text-sm uppercase tracking-[0.3em] font-extrabold text-cyan-700 dark:text-cyan-400">
+            Próxima sesión
+          </p>
+          <h2 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             {formatSessionType(nextSession.session_name)}
           </h2>
         </div>
+
+        {/* OPTIMIZACIÓN ESTRUCTURA HTML: 
+            Convertimos el Link en el contenedor plano de los datos semánticos, usando divs estilizados puros */}
         <Link 
-            href={sessionUrl}
-            className="rounded-2xl dark:bg-green-500/30 bg-gray-100 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer block"
-          >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {/* Nota: quitamos el onClick ya que en la Home no manejas el estado de grupos de la página de sesiones */}
-          <div className="rounded-2xl dark:bg-green-500/30 bg-gray-100 text-center p-4">
-            <p className="uppercase tracking-[0.2em] text-gray-900 dark:text-white font-medium">
-              {nextSession.circuit_name || nextSession.location || "Lugar desconocido"}
-            </p>
-          </div>
+          href={sessionUrl}
+          className="group block rounded-2xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20 p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer"
+          aria-label={`Ver detalles de la próxima sesión en ${nextSession.circuit_name || nextSession.location}`}
+        >
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            
+            <div className="rounded-xl dark:bg-green-500/10 bg-gray-100/80 text-center p-3 flex flex-col justify-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Ubicación</p>
+              <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white truncate">
+                {nextSession.circuit_name || nextSession.location || "Lugar desconocido"}
+              </p>
+            </div>
 
-          <div className="rounded-2xl bg-green-500/20 p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
-              Cuenta regresiva
-            </p>
-            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-              {countdown}
-            </p>
-          </div>
+            <div className="rounded-xl bg-green-500/10 dark:bg-green-500/20 p-3 text-center flex flex-col justify-center border border-green-500/10">
+              <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                Cuenta regresiva
+              </p>
+              <p className="mt-1 text-sm font-extrabold text-gray-950 dark:text-white">
+                {countdown}
+              </p>
+            </div>
 
-          <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
-              Horario local
-            </p>
-            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-              {formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}
-            </p>
-          </div>
+            <div className="rounded-xl bg-slate-50 dark:bg-gray-800/40 p-3 text-center flex flex-col justify-center border border-gray-100/50 dark:border-gray-700/20">
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                Horario local
+              </p>
+              <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">
+                {formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}
+              </p>
+            </div>
 
-          <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">
-              Hora Argentina
-            </p>
-            <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-              {formatArgentinaDateTime(nextSession.date_start)}
-            </p>
+            <div className="rounded-xl bg-slate-50 dark:bg-gray-800/40 p-3 text-center flex flex-col justify-center border border-gray-100/50 dark:border-gray-700/20">
+              <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                Hora Argentina
+              </p>
+              <p className="mt-1 text-sm font-bold text-gray-900 dark:text-white">
+                {formatArgentinaDateTime(nextSession.date_start)}
+              </p>
+            </div>
+            
           </div>
-        </div>
+          <div className="mt-3 text-center text-xs font-bold text-cyan-700 dark:text-cyan-400 group-hover:underline">
+            Ver cronograma de todo el fin de semana →
+          </div>
         </Link>
       </div>
     </section>

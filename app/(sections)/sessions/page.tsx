@@ -39,7 +39,6 @@ export interface Session {
 function SessionsContent() {
   const searchParams = useSearchParams();
 
-  // 1. INICIALIZACIÓN DIRECTA DESDE LA URL (Cero renders en cascada)
   const [selectedYear, setSelectedYear] = useState<number | null>(() => {
     const urlYear = searchParams.get("year");
     return urlYear ? Number(urlYear) : 2026;
@@ -51,7 +50,6 @@ function SessionsContent() {
     return urlYear && urlMeetingKey ? `${urlYear}-${urlMeetingKey}` : null;
   });
 
-  // Guardamos solo la key de la sesión que viene por URL para buscarla cuando carguen los datos
   const [urlSessionKey] = useState<number | null>(() => {
     const sessionKey = searchParams.get("session_key");
     return sessionKey ? Number(sessionKey) : null;
@@ -94,9 +92,6 @@ function SessionsContent() {
     );
   }, [sessions]);
 
-  // 2. ESTADO DERIVADO DURANTE EL RENDERIZADO
-  // Si tenemos una urlSessionKey activa pero no hemos seleccionado manualmente una sesión,
-  // la derivamos directamente de la lista de sesiones ya cargada.
   const activeSession = useMemo(() => {
     if (selectedSession) return selectedSession;
     if (urlSessionKey && sessions.length > 0) {
@@ -175,7 +170,6 @@ function SessionsContent() {
   const handleBackToGroups = () => {
     setSelectedGroup(null);
     setSelectedSession(null);
-    // Forzamos limpiar la sesión derivada de la URL si vuelve atrás
     if (urlSessionKey) {
       const url = new URL(window.location.href);
       url.search = "";
@@ -185,12 +179,10 @@ function SessionsContent() {
 
   const handleBackToSessions = () => {
     setSelectedSession(null);
-    // Si venía de la URL, limpiamos los params para que no se quede estancado en detalles
     if (urlSessionKey) {
       const url = new URL(window.location.href);
       url.searchParams.delete("session_key");
       window.history.replaceState({}, "", url.toString());
-      // Forzamos un reinicio local para que activeSession pase a ser null
       window.location.reload();
     }
   };
@@ -205,12 +197,12 @@ function SessionsContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <header className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             🎯 Sesiones
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">
             {activeSession
               ? `Resultados:`
               : selectedGroup && groupedSessions[selectedGroup]
@@ -218,7 +210,14 @@ function SessionsContent() {
                 : `Total de eventos: ${sortedGroupKeys.length}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
+          {/* OPTIMIZACIÓN ACCESIBILIDAD: label semántica vinculada al select */}
+          <label 
+            htmlFor="yearChampionship" 
+            className="text-gray-700 dark:text-gray-300 font-semibold text-sm"
+          >
+            Año:
+          </label>
           <select
             name="yearChampionship"
             id="yearChampionship"
@@ -228,7 +227,7 @@ function SessionsContent() {
               setSelectedSession(null);
             }}
             value={selectedYear || 2026}
-            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-600 outline-none transition cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-600 outline-hidden transition cursor-pointer font-semibold text-sm"
           >
             <option value={2026}>2026</option>
             <option value={2025}>2025</option>
@@ -236,35 +235,41 @@ function SessionsContent() {
             <option value={2023}>2023</option>
           </select>
         </div>
-      </div>
+      </header>
 
+      {/* 1. SECCIÓN PRÓXIMA SESIÓN (Con altura mínima pre-calculada para eliminar CLS) */}
       {!selectedGroup && !activeSession && nextSession && selectedYear === 2026 ? (
-        <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-sm">
-          <div className="flex flex-col gap-4 ">
+        <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-xs min-h-77.5 sm:min-h-55">
+          <div className="flex flex-col gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-cyan-600">Próxima sesión</p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+              {/* OPTIMIZACIÓN ACCESIBILIDAD: text-cyan-600 a text-cyan-700 en modo claro para contraste WCAG */}
+              <p className="text-sm uppercase tracking-[0.3em] font-bold text-cyan-700 dark:text-cyan-400">Próxima sesión</p>
+              <h2 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 {formatSessionType(nextSession.session_name)}
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <div onClick={() => handleSelectionGroup(`${nextSession.year}-${nextSession.meeting_key}`)} className="rounded-2xl dark:bg-green-500/30 bg-gray-100 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all ring-roup cursor-pointer">
-                <p className="uppercase tracking-[0.2em]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <button 
+                onClick={() => handleSelectionGroup(`${nextSession.year}-${nextSession.meeting_key}`)} 
+                className="rounded-2xl dark:bg-green-500/10 bg-gray-100 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer border border-transparent dark:border-green-500/20"
+                aria-label={`Ver datos del evento en ${nextSession.circuit_name || nextSession.location}`}
+              >
+                <p className="uppercase tracking-[0.2em] font-bold text-gray-950 dark:text-white text-xs">
                   {nextSession.circuit_name || nextSession.location || 'Lugar desconocido'}
                 </p>
-                <p className="text-sm mt-2 text-cyan-800 dark:text-cyan-400">Ver datos</p>
+                <p className="text-sm mt-2 text-cyan-800 dark:text-cyan-400 font-semibold">Ver datos</p>
+              </button>
+              <div className="rounded-2xl bg-green-500/10 dark:bg-green-500/20 p-4 border border-green-500/10">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Cuenta regresiva</p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{countdown}</p>
               </div>
-              <div className="rounded-2xl bg-green-500/20 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Cuenta regresiva</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">{countdown}</p>
+              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Horario local</p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Horario local</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">{formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-                <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Hora Argentina</p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">{formatArgentinaDateTime(nextSession.date_start)}</p>
+              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Hora Argentina</p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{formatArgentinaDateTime(nextSession.date_start)}</p>
               </div>
             </div>
           </div>
@@ -275,33 +280,44 @@ function SessionsContent() {
         <SessionDetailsView session={activeSession} onBack={handleBackToSessions} />
       ) : selectedGroup && groupedSessions[selectedGroup] ? (
         <div className="space-y-6">
-          <button onClick={handleBackToGroups} className="flex items-center gap-2 text-cyan-600 hover:text-cyan-500 font-bold transition group">
+          <button onClick={handleBackToGroups} className="flex items-center gap-2 text-cyan-700 dark:text-cyan-400 hover:text-cyan-600 font-bold transition group">
             <span className="group-hover:-translate-x-1 transition-transform">←</span> Volver a eventos
           </button>
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="relative flex items-center justify-center">
+          
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-gray-800/40 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+            {/* OPTIMIZACIÓN RENDIMIENTO Y CLS (Mapa de circuito en panel interno con proporción estricta) */}
+            <div className="relative w-full aspect-square max-w-112.5 mx-auto overflow-hidden rounded-xl">
               {circuitInfo && (
-                <Image alt="circuit map" src={`/circuitsMaps/${circuitInfo.circuit_code}.avif`} width={900} height={900} />
+                <Image 
+                  alt="Mapa del circuito de carrera" 
+                  src={`/circuitsMaps/${circuitInfo.circuit_code}.avif`} 
+                  fill
+                  sizes="(max-width: 768px) 100vw, 450px"
+                  className="object-contain"
+                  priority
+                />
               )}
             </div>
-            <div className="relative flex items-center justify-center">
+            <div className="flex items-center justify-center w-full">
               {circuitInfo && (
-                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Información del circuito</h3>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Nombre:</strong> {circuitInfo.circuit_name}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Longitud:</strong> {circuitInfo.circuit_length} km</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Primer GP:</strong> {circuitInfo.first_grand_prix}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Número de vueltas:</strong> {circuitInfo.number_of_laps}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Vuelta rápida:</strong> {circuitInfo.fastest_lap_time}</p>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-1"><strong>Distancia de carrera:</strong> {circuitInfo.race_distance} km</p>
+                <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 w-full shadow-xs">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Información del circuito</h3>
+                  <div className="space-y-2.5 text-sm">
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Nombre:</strong> {circuitInfo.circuit_name}</p>
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Longitud:</strong> {circuitInfo.circuit_length} km</p>
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Primer GP:</strong> {circuitInfo.first_grand_prix}</p>
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Número de vueltas:</strong> {circuitInfo.number_of_laps}</p>
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Vuelta rápida:</strong> {circuitInfo.fastest_lap_time}</p>
+                    <p className="text-gray-700 dark:text-gray-300"><strong>Distancia de carrera:</strong> {circuitInfo.race_distance} km</p>
+                  </div>
                 </div>
               )}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {groupedSessions[selectedGroup].map((session: Session, idx: number) => (
+            {groupedSessions[selectedGroup].map((session: Session) => (
               <SessionCard
-                key={idx}
+                key={session.session_key}
                 {...session}
                 onClick={session.is_cancelled ? undefined : () => setSelectedSession(session)}
               />
@@ -309,43 +325,64 @@ function SessionsContent() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        /* 2. GRILLA PRINCIPAL DE EVENTOS (Con altura mínima para prevenir colapsos bruscos) */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-150">
           {sortedGroupKeys.map((key) => {
             const group = groupedSessions[key];
             const firstSession = group[0];
             return (
-              <div
+              <article
                 key={key}
                 onClick={firstSession.is_cancelled ? undefined : () => handleSelectionGroup(key)}
-                className={firstSession.is_cancelled ? "cursor-not-allowed bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-transparent flex flex-col" : "cursor-pointer hover:ring-2 hover:ring-cyan-500 transition-all ring-roup bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-transparent flex flex-col"}
+                className={firstSession.is_cancelled 
+                  ? "cursor-not-allowed bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col" 
+                  : "cursor-pointer  hover:translate-y-1 hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col"
+                }
               >
                 <div className="flex justify-between items-start mb-4">
-                  <span className="text-xs text-cyan-600 uppercase tracking-widest bg-cyan-50 dark:bg-cyan-900/10 px-2 py-1 rounded">{formatDate(firstSession.date_start)}</span>
-                  <span className="text-2xl" title={firstSession.country_name}>
-                    <Image src={getCountryFlag(firstSession.country_code)} alt={firstSession.country_name} width={32} height={24} />
+                  {/* OPTIMIZACIÓN ACCESIBILIDAD: text-cyan-700 en modo claro para contraste */}
+                  <span className="text-xs text-cyan-700 dark:text-cyan-400 font-bold uppercase tracking-widest bg-cyan-50 dark:bg-cyan-900/10 px-2 py-1 rounded">
+                    {formatDate(firstSession.date_start)}
                   </span>
+                  <div className="relative w-8 h-6 overflow-hidden rounded-xs border border-gray-100 dark:border-gray-700">
+                    <Image 
+                      src={getCountryFlag(firstSession.country_code)} 
+                      alt={`Bandera de ${firstSession.country_name || 'N/A'}`} 
+                      fill 
+                      sizes="32px"
+                      className="object-cover"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 gap-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{firstSession.location}</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 italic">{firstSession.circuit_short_name}</p>
                   </div>
-                  <div className="relative max-w-30">
+                  {/* OPTIMIZACIÓN CLS: El mapa del circuito se envuelve en un div proporcional con fallback */}
+                  <div className="relative w-24 h-24 overflow-hidden shrink-0 bg-slate-50/50 dark:bg-gray-900/40 rounded-lg p-1 border border-gray-100 dark:border-gray-800/50">
                     <Image
-                      alt="circuit map"
-                      src={`/circuitsMaps/${firstSession.location.toLowerCase()}.svg` || `/circuitsMaps/${firstSession.circuit_short_name.toLowerCase()}.svg`}
-                      width={500}
-                      height={500}
+                      alt={`Esquema del circuito de ${firstSession.location}`}
+                      src={`/circuitsMaps/${firstSession.location?.toLowerCase()}.svg` || `/circuitsMaps/${firstSession.circuit_short_name?.toLowerCase()}.svg`}
+                      fill
+                      sizes="96px"
+                      className="object-contain p-1"
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {firstSession.is_cancelled ? <p className="text-xs text-cyan-600 tracking-widest px-2 py-1 rounded">Sesión Cancelada</p> : <p>{group.length} Sesiones</p>}
-                  </span>
-                  <span className="text-cyan-600 group-hover:translate-x-1 transition-transform font-bold text-sm">Ver detalles →</span>
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 w-full">
+                  <div className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    {firstSession.is_cancelled ? (
+                      <span className="text-xs text-red-600 dark:text-red-400 font-bold tracking-wider uppercase">Cancelado</span>
+                    ) : (
+                      <span>{group.length} Sesiones</span>
+                    )}
+                  </div>
+                  {!firstSession.is_cancelled && (
+                    <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm hover:underline">Ver detalles →</span>
+                  )}
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>

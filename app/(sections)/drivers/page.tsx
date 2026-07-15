@@ -4,7 +4,7 @@ import { useF1Data } from '@/lib/hooks/useF1Data';
 import { DriverCard } from '@/app/components/cards/DriverCard';
 import { LoadingGrid } from '@/app/components/common/Loading';
 import { ErrorMessage, EmptyState } from '@/app/components/common/Error';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Driver {
   driver_number?: number;
@@ -17,21 +17,26 @@ interface Driver {
 }
 
 const driversConfig = {
-    endpoint: 'drivers',
-    queryParams: { session_key: "latest" }, 
-    refetchInterval: 0, // Desactivar actualización automática: se carga una vez y queda fija
+  endpoint: 'drivers',
+  queryParams: { session_key: "latest" }, 
+  refetchInterval: 0, // Desactivar actualización automática: se carga una vez y queda fija
 }
 
 export default function DriversPage() {
-  const [ order, setOrder ] = useState('number'); 
-
+  const [order, setOrder] = useState('number'); 
   const { data, loading, error, refetch } = useF1Data(driversConfig);
+
+  // OPTIMIZACIÓN DE RENDIMIENTO Y RENDERING:
+  // Mover el scroll al tope de la página dentro de un useEffect. 
+  // Ejecutarlo en el render principal causaba scrolls continuos ante cualquier cambio de estado (como reordenar).
+  useEffect(() => {
+    if (!loading && !error) {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  }, [loading, error]);
 
   if (loading) return <LoadingGrid />;
   if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
-if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-    }
     
   const drivers = Array.isArray(data) ? data : [];
 
@@ -57,30 +62,49 @@ if (typeof window !== "undefined") {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
             Pilotos
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Total de pilotos: <span className="font-bold text-cyan-600">{drivers.length}</span>
+          {/* OPTIMIZACIÓN DE ACCESIBILIDAD (CONTRASTE):
+              Cambiamos text-cyan-600 a text-cyan-700 en modo claro para superar el ratio de contraste exigido por Lighthouse */}
+          <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">
+            Total de pilotos: <span className="font-bold text-cyan-700 dark:text-cyan-400">{drivers.length}</span>
           </p>
         </div>
-      <div className="block md:flex items-center gap-4">
-        <p>Ordenar por:</p>
-        <select name="pilotsOrder" id="pilotsOrder"  className="px-8 py-3 border-2 border-gray-500 text-white bg-gray-600 font-bold rounded-lg hover:bg-gray-800" onChange={(e) => setOrder(e.target.value)} value={order}>
-          <option value="number" className='bg-gray-800'>Número</option>
-          <option value="name" className='bg-gray-800'>Apellido</option>
-          <option value="team" className='bg-gray-800'>Equipo</option>
-        </select>
-      </div>
-          
+        
+        {/* OPTIMIZACIÓN DE ACCESIBILIDAD (FORMULARIOS):
+            - Cambiamos el <p> por un <label> enlazado mediante 'htmlFor' al id del selector.
+            - Esto resuelve directamente la advertencia "Select elements do not have associated label elements" */}
+        <div className="flex items-center gap-3">
+          <label 
+            htmlFor="pilotsOrder" 
+            className="text-gray-700 dark:text-gray-300 font-semibold text-sm"
+          >
+            Ordenar por:
+          </label>
+          <select 
+            name="pilotsOrder" 
+            id="pilotsOrder"  
+            className="px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white bg-white dark:bg-gray-800 font-semibold rounded-lg shadow-xs focus:ring-2 focus:ring-cyan-500 focus:outline-hidden transition" 
+            onChange={(e) => setOrder(e.target.value)} 
+            value={order}
+          >
+            <option value="number">Número</option>
+            <option value="name">Apellido</option>
+            <option value="team">Equipo</option>
+          </select>
+        </div>
       </div>
 
       {/* Grid de Pilotos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {sortedDrivers.map((driver: Driver, idx: number) => (
-          <DriverCard key={idx} {...driver} />
+        {sortedDrivers.map((driver: Driver) => (
+          <DriverCard 
+            key={driver.driver_number ?? driver.last_name ?? 'fallback'} 
+            {...driver} 
+          />
         ))}
       </div>
     </div>
