@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'img.youtube.com', // Servidor de respaldo que a veces usa la API de YT
+        hostname: 'img.youtube.com', // SÚPER IMPORTANTE para el renderizado del fallback
         pathname: '/**',
       },
       {
