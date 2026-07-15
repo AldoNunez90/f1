@@ -134,7 +134,7 @@ export default function Home() {
       href: '/sessions',
       count: sessionCount,
       color: 'from-purple-600 to-purple-800',
-      icon: '/sessionsImg.png',
+      icon: '/sessionsImg.webp',
       loading: sessionsLoading,
     }, {
       title: 'Campeonatos',
@@ -142,7 +142,7 @@ export default function Home() {
       href: '/championship',
       count: raceCount,
       color: 'from-red-600 to-red-800',
-      icon: '/banderaCuadros.png',
+      icon: '/banderaCuadros.webp',
       loading: driversLoading,
     },
     {
@@ -151,7 +151,7 @@ export default function Home() {
       href: '/drivers',
       count: driverCount,
       color: 'from-blue-600 to-blue-800',
-      icon: '/cascoDrivers.png',
+      icon: '/cascoDrivers.webp',
       loading: driversLoading,
     },
     {
@@ -160,7 +160,7 @@ export default function Home() {
       href: '/teams',
       count: Math.ceil(driverCount / 2),
       color: 'from-green-600 to-green-800',
-      icon: '/teamsImg.png',
+      icon: '/teamsImg.webp',
       loading: driversLoading,
     },
   ];
@@ -168,7 +168,7 @@ export default function Home() {
   return (
     <div className="space-y-12">
       {/* Hero Section */}
-      <section className="min-h-96 relative overflow-hidden rounded-2xl bg-[url('/landingImgMobile.png')] md:bg-[url('/landingImgAlfaRomeo.png')] bg-center bg-no-repeat bg-cover md:py-12 text-white justify-items-end ">
+      <section className="min-h-96 relative overflow-hidden rounded-2xl bg-[url('/landingImgMobile.webp')] md:bg-[url('/landingImgAlfaRomeo.webp')] bg-center bg-no-repeat bg-cover md:py-12 text-white justify-items-end ">
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl"></div>
         <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl"></div>
 
