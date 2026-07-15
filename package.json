@@ -10,6 +10,7 @@
     "sync-f1-data": "node scripts/sync-f1-data.js"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "@vitalets/google-translate-api": "^9.2.1",
     "axios": "^1.7.9",
     "cheerio": "^1.2.0",

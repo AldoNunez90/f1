@@ -5,6 +5,24 @@ import Image from 'next/image';
 
 const NEWS_PAGE_LIMIT = 24;
 
+interface NewsItem {
+  title: string;
+  link: string;
+  img?: string;
+  source?: string;
+  description?: string;
+  pubDate?: string;
+}
+
+interface VideoItem {
+  channelId: string;
+  title: string;
+  link: string;
+  channelName: string;
+  published?: string;
+  thumbnail?: string;
+}
+
 function formatNewsDate(dateString?: string) {
   if (!dateString) return 'Reciente';
 
@@ -24,68 +42,99 @@ function sanitizeDescription(description?: string) {
 }
 
 export default async function NovedadesPage() {
-  const news = await fetchLatestNewsItems(NEWS_PAGE_LIMIT);
-  const videos = await fetchLatestVideos();
+  // Peticiones paralelas en el back de forma segura
+  const [newsData, videosData] = await Promise.all([
+    fetchLatestNewsItems(NEWS_PAGE_LIMIT),
+    fetchLatestVideos()
+  ]);
+
+  const news: NewsItem[] = Array.isArray(newsData) ? newsData : [];
+  const videos: VideoItem[] = Array.isArray(videosData) ? videosData : [];
+
   return (
     <div className="space-y-8 md:py-8 sm:px-6 lg:px-8">
-      <section className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8 shadow-xl">
+      
+      {/* Sección Noticias */}
+      <section className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8 shadow-xl border border-gray-100 dark:border-gray-800">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-cyan-600">Novedades</p>
-            <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-white">Últimas noticias de Fórmula 1</h1>
+            {/* OPTIMIZACIÓN CONTRASTE: text-cyan-600 a text-cyan-700 en modo claro */}
+            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-400">Novedades</p>
+            <h1 className="mt-3 text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+              Últimas noticias de Fórmula 1
+            </h1>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {news.map((item) => (
-            <a
-              key={item.link}
-              href={item.link}
-              target="_blank"
-              rel="noreferrer"
-              className="group block rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:border-cyan-400 dark:border-gray-800 dark:bg-slate-950"
-            >
-              <div className="flex h-full flex-col justify-between gap-6">
-                <Image
-                  alt={item.title}
-                  src={item.img || '/landingImgAlfaRomeo.png'}
-                  width={300}
-                  height={190}
-                  className="h-48 w-full rounded-2xl object-cover"
-                />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {news.map((item) => {
+            const cleanDescription = sanitizeDescription(item.description);
+            const truncatedDescription = cleanDescription.slice(0, 140) + (cleanDescription.length > 140 ? '...' : '');
+            
+            return (
+              <article 
+                key={item.link} 
+                className="group relative rounded-3xl border border-gray-200 bg-slate-50 shadow-md transition-all duration-300 hover:translate-y-1 hover:shadow-xl hover:border-cyan-500 dark:border-gray-800 dark:bg-slate-950 flex flex-col justify-between h-full overflow-hidden"
+              >
                 <div>
-                  <div className="mb-3 inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300">
-                    {item.source ?? 'Fuente'}
+                  {/* Contenedor de la imagen de noticias (Con dimensiones reservadas CLS) */}
+                  <div className="relative h-48 w-full overflow-hidden bg-slate-200 dark:bg-gray-800">
+                    <Image
+                      alt={`Imagen de la noticia: ${item.title}`}
+                      src={item.img || '/landingImgAlfaRomeo.webp'} 
+                      fill
+                      unoptimized
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-103"
+                    />
                   </div>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-white">{item.title}</h2>
-                  <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                    {sanitizeDescription(item.description).slice(0, 140)}
-                    {item.description && item.description.length > 140 ? '...' : ''}
-                  </p>
+
+                  <div className="p-6">
+                    <div className="mb-3 inline-flex rounded-full bg-cyan-100 px-3 py-1 text-xs font-bold text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-300">
+                      {item.source ?? 'Fuente'}
+                    </div>
+                    <h2 className="text-xl font-extrabold text-slate-900 dark:text-white line-clamp-2 tracking-tight">
+                      {item.title}
+                    </h2>
+                    <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300 line-clamp-3">
+                      {truncatedDescription}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
-                  <span>{formatNewsDate(item.pubDate)}</span>
-                  <span className="font-semibold text-cyan-600 dark:text-cyan-400">Ver noticia →</span>
+                <div className="px-6 pb-6 mt-auto">
+                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800/60 flex items-center justify-between text-sm text-slate-500 dark:text-slate-400">
+                    <span className="font-medium">{formatNewsDate(item.pubDate)}</span>
+                    <a 
+                      href={item.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-cyan-700 dark:text-cyan-400 hover:underline inline-flex items-center gap-1"
+                      aria-label={`Ver noticia completa: ${item.title}`}
+                    >
+                      Ver noticia <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </a>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      <section id="videos" className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-8 shadow-xl">
+      {/* Sección Videos */}
+      <section id="videos" className="max-w-6xl mx-auto rounded-3xl bg-white dark:bg-gray-900 p-6 md:p-8 shadow-xl border border-gray-100 dark:border-gray-800">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-cyan-600">Últimos videos</p>
-            <h1 className="mt-3 text-4xl font-bold text-gray-900 dark:text-white">Canales con data en español</h1>
-            <p className="mt-2 text-gray-600 dark:text-gray-300 max-w-2xl">
-              Ultimo video de cada canal, actualizado desde el feed de Youtube
+            <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-400">Últimos videos</p>
+            <h2 className="mt-3 text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">Canales con data en español</h2>
+            <p className="mt-2 text-gray-600 dark:text-gray-400 max-w-2xl font-medium">
+              Último video de cada canal, actualizado desde el feed de YouTube.
             </p>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {videos.map((video) => (
             <VideoCard
               key={video.channelId}
