@@ -6,7 +6,7 @@ interface CountdownProps {
   targetDate?: string;
 }
 
-export function CountDown({ targetDate }: CountdownProps) {
+export function Countdown({ targetDate }: CountdownProps) {
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
@@ -17,7 +17,7 @@ export function CountDown({ targetDate }: CountdownProps) {
     return () => clearInterval(timerId);
   }, []);
 
-  const countdownText = useMemo(() => {
+  const CountdownText = useMemo(() => {
     if (!targetDate) return "No disponible";
 
     const targetTime = new Date(targetDate).getTime();
@@ -33,5 +33,5 @@ export function CountDown({ targetDate }: CountdownProps) {
     return `${days}d ${hours}h ${minutes}m ${seconds}s`;
   }, [targetDate, now]);
 
-  return <span>{countdownText}</span>;
+  return <span>{CountdownText}</span>;
 }

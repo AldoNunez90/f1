@@ -16,7 +16,7 @@ import {
 import Image from "next/image";
 import SessionDetailsView from "@/app/components/cards/SessionDetailsView";
 import { circuits } from "@/lib/data/circuits";
-import { CountDown } from "@/app/components/cards/CountDown";
+import { Countdown } from "@/app/components/cards/Countdown";
 
 export interface Session {
   session_key?: number;
@@ -253,7 +253,7 @@ function SessionsContent() {
                   Cuenta regresiva
                 </p>
                 <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
-                  <CountDown targetDate={nextSession.date_start} />
+                  <Countdown targetDate={nextSession.date_start} />
                 </p>
               </div>
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700">

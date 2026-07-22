@@ -13,7 +13,7 @@ import {
   formatDateTimeWithOffset,
   formatArgentinaDateTime,
 } from "@/lib/utils/formatters";
-import { CountDown } from "@/app/components/cards/CountDown";
+import { Countdown } from "@/app/components/cards/Countdown";
 
 
 
@@ -244,7 +244,7 @@ export default function Home() {
                   Cuenta regresiva
                 </p>
                 <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
-                  <CountDown targetDate={nextSession.date_start} />
+                  <Countdown targetDate={nextSession.date_start} />
                 </p>
               </div>
 
