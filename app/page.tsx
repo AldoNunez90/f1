@@ -1,19 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { useF1Data } from "@/lib/hooks/useF1Data";
 import { useRssFeed } from "@/lib/hooks/useRssFeed";
 import { useVideoFeed } from "@/lib/hooks/useVideoFeed";
 import Image from "next/image";
 import { VideoCard } from "@/app/components/cards/VideoCard";
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   formatSessionType,
   formatDateTimeWithOffset,
   formatArgentinaDateTime,
 } from "@/lib/utils/formatters";
+import { Countdown } from "@/app/components/cards/Countdown";
 
-// Mantenemos la interfaz para el tipado local de las sesiones
 interface Session {
   session_key?: number;
   session_name?: string;
@@ -62,17 +63,14 @@ function sanitizeDescription(description?: string) {
 
 export default function Home() {
   const { data: drivers, loading: driversLoading } = useF1Data(driversConfig);
-  const { data: dataSessions, loading: sessionsLoading } =
-    useF1Data(sessionsConfig);
+  const { data: dataSessions, loading: sessionsLoading } = useF1Data(sessionsConfig);
   const { data: news, loading: newsLoading, error: newsError } = useRssFeed();
   const {
     data: videos,
     loading: videosLoading,
     error: videosError,
   } = useVideoFeed();
-
-  // Estado para controlar el tiempo actual del countdown
-  const [now, setNow] = useState<number>(() => Date.now());
+  const [now] = useState(() => Date.now());
 
   const sessions: Session[] = useMemo(
     () => (Array.isArray(dataSessions) ? dataSessions : []),
@@ -93,8 +91,8 @@ export default function Home() {
         .slice(0, 3)
     : [];
 
-  // --- LÓGICA DE CÁLCULO DE PRÓXIMA SESIÓN ---
-  const nextSession = useMemo(() => {
+  // --- LÓGICA DE CÁLCULO DE PRÓXIMA SESIÓN (Sin dependencia de timer) ---
+ const nextSession = useMemo(() => {
     const validSessions = sessions
       .filter((session) => session.date_start)
       .sort(
@@ -108,9 +106,9 @@ export default function Home() {
         ? new Date(session.date_end).getTime()
         : null;
       return start <= now && (end === null || now <= end);
-    });
+    }); 
 
-    return (
+   return (
       liveSession ||
       validSessions.find(
         (session) => new Date(session.date_start!).getTime() > now,
@@ -118,31 +116,6 @@ export default function Home() {
       validSessions[0]
     );
   }, [sessions, now]);
-
-  // Timer para el countdown
-  useEffect(() => {
-    const timerId = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, []);
-
-  const countdown = useMemo(() => {
-    if (!nextSession?.date_start) return "No disponible";
-
-    const targetTime = new Date(nextSession.date_start).getTime();
-    const diff = targetTime - now;
-
-    if (diff <= 0) return "Finalizada";
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }, [nextSession, now]);
 
   const sections = [
     {
@@ -185,78 +158,74 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-     
-  <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end flex items-center md:block">
-    {/* 1. Imagen de fondo para pantallas de escritorio (MD en adelante) */}
-    <div className="hidden md:block">
-      <Image
-        src="/landingImgAlfaRomeo.webp"
-        alt="F1 Hub Hero Background"
-        fill
-        priority 
-        sizes="(max-width: 1200px) 100vw, 1200px" 
-        className="object-cover object-center z-0"
-      />
-    </div>
+      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end flex items-center md:block">
+        <div className="hidden md:block">
+          <Image
+            src="/landingImgAlfaRomeo.webp"
+            alt="F1 Hub Hero Background"
+            fill
+            priority
+            sizes="(max-width: 1200px) 100vw, 1200px"
+            className="object-cover object-center z-0"
+          />
+        </div>
 
-    {/* 2. Imagen de fondo para dispositivos móviles */}
-    <div className="block md:hidden">
-      <Image
-        src="/landingImgMobile.webp"
-        alt="F1 Hub Hero Background Mobile"
-        fill
-        priority
-        fetchPriority="high"
-        sizes="(max-width: 768px) 100vw, 50vw"
-        className="object-cover object-center z-0"
-      />
-    </div>
+        <div className="block md:hidden">
+          <Image
+            src="/landingImgMobile.webp"
+            alt="F1 Hub Hero Background Mobile"
+            fill
+            priority
+            fetchPriority="high"
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="object-cover object-center z-0"
+          />
+        </div>
 
-    <div className="absolute inset-0 bg-linear-to-r from-black/50 via-transparent to-black/20 z-0 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/50 via-transparent to-black/20 z-0 pointer-events-none" />
 
-    <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
-    <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
+        <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
+        <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
 
-    <div className="hidden md:flex relative z-10 flex-col max-w-1/3 m-5 bg-gray-600/30 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-      <h1 className="text-5xl font-bold mb-4 mt-4 tracking-tight">F1 HUB</h1>
-      <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line font-medium">
-        {`Tu fuente de datos de F1`}
-      </p>
+        <div className="hidden md:flex relative z-10 flex-col max-w-1/3 m-5 bg-gray-600/30 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+          <h1 className="text-5xl font-bold mb-4 mt-4 tracking-tight">F1 HUB</h1>
+          <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line font-medium">
+            {`Tu fuente de datos de F1`}
+          </p>
 
-      <div className="flex gap-4 flex-wrap mb-10">
-        <Link
-          href="/championship"
-          className="px-8 py-3 border-2 border-white text-white bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition mb-8 text-center"
-        >
-          Campeonatos →
-        </Link>
-        <Link
-          href="sessions"
-          className="px-8 py-3 bg-cyan-900/50 border-2 border-white text-white font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition text-center"
-        >
-          Resultados por sesiones
-        </Link>
-      </div>
-    </div>
-  </section>
+          <div className="flex gap-4 flex-wrap mb-10">
+            <Link
+              href="/championship"
+              className="px-8 py-3 border-2 border-white text-white bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition mb-8 text-center"
+            >
+              Campeonatos →
+            </Link>
+            <Link
+              href="sessions"
+              className="px-8 py-3 bg-cyan-900/50 border-2 border-white text-white font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition text-center"
+            >
+              Resultados por sesiones
+            </Link>
+          </div>
+        </div>
+      </section>
 
-      {/* --- NUEVA SECCIÓN: WIDGET PRÓXIMA SESIÓN --- */}
+      {/* --- WIDGET PRÓXIMA SESIÓN --- */}
       {!sessionsLoading && nextSession ? (
         <section className="rounded-3xl bg-gray-100 dark:bg-gray-900 border border-gray-400 dark:border-gray-800 p-6 shadow-sm">
           <div className="flex flex-col gap-4">
             <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-cyan-600">
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-600 font-bold">
                 Próxima sesión
               </p>
               <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
                 {formatSessionType(nextSession.session_name)}
               </h2>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {/* Enlace que pasa los parámetros necesarios para saltar el flujo en la página destino */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link
                 href={`/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}`}
-                className="rounded-2xl dark:bg-green-500/30 bg-gray-200 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all ring-roup cursor-pointer block"
+                className="rounded-2xl dark:bg-green-500/30 bg-gray-200 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer block"
               >
                 <p className="uppercase tracking-[0.2em] font-bold text-gray-800 dark:text-gray-200">
                   {nextSession.circuit_name ||
@@ -268,14 +237,15 @@ export default function Home() {
                 </p>
               </Link>
 
-              <div className="rounded-2xl bg-green-500/20 p-4">
-                <p className="text-xs text-black dark:text-gray-400 uppercase tracking-[0.2em]">
+              <div className="rounded-2xl bg-green-500/10 dark:bg-green-500/20 p-4 border border-green-500/10">
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
                   Cuenta regresiva
                 </p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  {countdown}
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
+                  <Countdown targetDate={nextSession.date_start} />
                 </p>
               </div>
+
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
                 <p className="text-xs text-black dark:text-gray-400 uppercase tracking-[0.2em]">
                   Horario local
@@ -287,6 +257,7 @@ export default function Home() {
                   )}
                 </p>
               </div>
+
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
                 <p className="text-xs text-black dark:text-gray-400 uppercase tracking-[0.2em]">
                   Hora Argentina
@@ -379,14 +350,15 @@ export default function Home() {
                 className="group block rounded-3xl border border-gray-200 bg-slate-50 p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl hover:border-cyan-400 dark:border-gray-800 dark:bg-slate-950"
               >
                 <div className="flex h-full flex-col justify-between gap-6">
+                  <div className="relative w-full h-48 overflow-hidden rounded-xl">
                   <Image
                     src={item.img || "/landingImgAlfaRomeo.png"}
                     alt={item.title}
                     sizes="(max-width: 768px) 100vw, 33vw"
-                    width={326}
-                    height={218}
+                    fill
                     className="object-cover rounded-2xl"
-                  />
+                    />
+                    </div>
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                       {item.title}

@@ -45,7 +45,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.f1technical.net',
         pathname: '/**',
-      },
+      }
     ],
   },
 };
