@@ -6,7 +6,7 @@ interface CountdownProps {
   targetDate?: string;
 }
 
-export function Countdown({ targetDate }: CountdownProps) {
+export function CountDown({ targetDate }: CountdownProps) {
   const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {

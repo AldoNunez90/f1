@@ -13,7 +13,7 @@ import {
   formatDateTimeWithOffset,
   formatArgentinaDateTime,
 } from "@/lib/utils/formatters";
-import { Countdown } from "@/app/components/cards/Countdown";
+import { CountDown } from "@/app/components/cards/CountDown";
 
 interface Session {
   session_key?: number;
@@ -159,7 +159,7 @@ export default function Home() {
   return (
     <div className="space-y-12">
       <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end flex items-center md:block">
-        <div className="hidden md:block">
+        <div className="hidden md:block absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
             alt="F1 Hub Hero Background"
@@ -170,7 +170,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="block md:hidden">
+        <div className="block md:hidden absolute inset-0">
           <Image
             src="/landingImgMobile.webp"
             alt="F1 Hub Hero Background Mobile"
@@ -242,7 +242,7 @@ export default function Home() {
                   Cuenta regresiva
                 </p>
                 <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
-                  <Countdown targetDate={nextSession.date_start} />
+                  <CountDown targetDate={nextSession.date_start} />
                 </p>
               </div>
 

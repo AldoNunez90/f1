@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     siteName: 'F1 HUB',
     images: [
       {
-        url: '/icon.png', 
+        url: 'https://f1-xi-ten.vercel.app/_next/image?url=%2FcascoDrivers.webp&w=640&q=75', 
         width: 512,
         height: 512,
         alt: 'Portada de Documentos FIA',

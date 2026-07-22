@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import SessionDetailsView from "@/app/components/cards/SessionDetailsView";
 import { circuits } from "@/lib/data/circuits";
+import { CountDown } from "@/app/components/cards/CountDown";
 
 export interface Session {
   session_key?: number;
@@ -43,7 +44,7 @@ function SessionsContent() {
     const urlYear = searchParams.get("year");
     return urlYear ? Number(urlYear) : 2026;
   });
-  
+
   const [selectedGroup, setSelectedGroup] = useState<string | null>(() => {
     const urlYear = searchParams.get("year");
     const urlMeetingKey = searchParams.get("meeting_key");
@@ -69,8 +70,8 @@ function SessionsContent() {
 
   const sessionConfig = useMemo(() => {
     return {
-      endpoint: 'sessions',
-      queryParams: { year: selectedYear ? selectedYear : 2026 }
+      endpoint: "sessions",
+      queryParams: { year: selectedYear ? selectedYear : 2026 },
     };
   }, [selectedYear]);
 
@@ -79,7 +80,7 @@ function SessionsContent() {
   const sessions = useMemo(() => {
     return Array.isArray(data) ? data : [];
   }, [data]);
-  
+
   const groupedSessions = useMemo(() => {
     return sessions.reduce(
       (acc: Record<string, Session[]>, session: Session) => {
@@ -108,13 +109,15 @@ function SessionsContent() {
     });
   }, [groupedSessions]);
 
-  const [now, setNow] = useState<number>(() => Date.now());
+  // Estado con timestamp estático para no violar la pureza durante el render
+  const [now] = useState<number>(() => Date.now());
 
   const nextSession = useMemo(() => {
     const validSessions = sessions
       .filter((session) => session.date_start)
       .sort(
-        (a, b) => new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
+        (a, b) =>
+          new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
       );
 
     const liveSession = validSessions.find((session) => {
@@ -125,34 +128,12 @@ function SessionsContent() {
 
     return (
       liveSession ||
-      validSessions.find((session) => new Date(session.date_start!).getTime() > now) ||
+      validSessions.find(
+        (session) => new Date(session.date_start!).getTime() > now,
+      ) ||
       validSessions[0]
     );
   }, [sessions, now]);
-
-  useEffect(() => {
-    const timerId = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(timerId);
-  }, []);
-
-  const countdown = useMemo(() => {
-    if (!nextSession?.date_start) return 'No disponible';
-
-    const targetTime = new Date(nextSession.date_start).getTime();
-    const diff = targetTime - now;
-
-    if (diff <= 0) return 'Finalizada';
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-    return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-  }, [nextSession, now]);
 
   const circuitInfo = useMemo(() => {
     if (!selectedGroup || !groupedSessions[selectedGroup]) return null;
@@ -193,7 +174,7 @@ function SessionsContent() {
     }
     setSelectedGroup(key);
   };
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -211,9 +192,8 @@ function SessionsContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* OPTIMIZACIÓN ACCESIBILIDAD: label semántica vinculada al select */}
-          <label 
-            htmlFor="yearChampionship" 
+          <label
+            htmlFor="yearChampionship"
             className="text-gray-700 dark:text-gray-300 font-semibold text-sm"
           >
             Año:
@@ -237,39 +217,63 @@ function SessionsContent() {
         </div>
       </header>
 
-      {/* 1. SECCIÓN PRÓXIMA SESIÓN (Con altura mínima pre-calculada para eliminar CLS) */}
+      {/* 1. SECCIÓN PRÓXIMA SESIÓN */}
       {!selectedGroup && !activeSession && nextSession && selectedYear === 2026 ? (
         <section className="rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-6 shadow-xs min-h-77.5 sm:min-h-55">
           <div className="flex flex-col gap-4">
             <div>
-              {/* OPTIMIZACIÓN ACCESIBILIDAD: text-cyan-600 a text-cyan-700 en modo claro para contraste WCAG */}
-              <p className="text-sm uppercase tracking-[0.3em] font-bold text-cyan-700 dark:text-cyan-400">Próxima sesión</p>
+              <p className="text-sm uppercase tracking-[0.3em] font-bold text-cyan-700 dark:text-cyan-400">
+                Próxima sesión
+              </p>
               <h2 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
                 {formatSessionType(nextSession.session_name)}
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <button 
-                onClick={() => handleSelectionGroup(`${nextSession.year}-${nextSession.meeting_key}`)} 
+              <button
+                onClick={() =>
+                  handleSelectionGroup(`${nextSession.year}-${nextSession.meeting_key}`)
+                }
                 className="rounded-2xl dark:bg-green-500/10 bg-gray-100 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer border border-transparent dark:border-green-500/20"
-                aria-label={`Ver datos del evento en ${nextSession.circuit_name || nextSession.location}`}
+                aria-label={`Ver datos del evento en ${
+                  nextSession.circuit_name || nextSession.location
+                }`}
               >
                 <p className="uppercase tracking-[0.2em] font-bold text-gray-950 dark:text-white text-xs">
-                  {nextSession.circuit_name || nextSession.location || 'Lugar desconocido'}
+                  {nextSession.circuit_name ||
+                    nextSession.location ||
+                    "Lugar desconocido"}
                 </p>
-                <p className="text-sm mt-2 text-cyan-800 dark:text-cyan-400 font-semibold">Ver datos</p>
+                <p className="text-sm mt-2 text-cyan-800 dark:text-cyan-400 font-semibold">
+                  Ver datos
+                </p>
               </button>
               <div className="rounded-2xl bg-green-500/10 dark:bg-green-500/20 p-4 border border-green-500/10">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Cuenta regresiva</p>
-                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{countdown}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                  Cuenta regresiva
+                </p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
+                  <CountDown targetDate={nextSession.date_start} />
+                </p>
               </div>
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Horario local</p>
-                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{formatDateTimeWithOffset(nextSession.date_start, nextSession.gmt_offset)}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                  Horario local
+                </p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
+                  {formatDateTimeWithOffset(
+                    nextSession.date_start,
+                    nextSession.gmt_offset,
+                  )}
+                </p>
               </div>
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">Hora Argentina</p>
-                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">{formatArgentinaDateTime(nextSession.date_start)}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
+                  Hora Argentina
+                </p>
+                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
+                  {formatArgentinaDateTime(nextSession.date_start)}
+                </p>
               </div>
             </div>
           </div>
@@ -280,17 +284,20 @@ function SessionsContent() {
         <SessionDetailsView session={activeSession} onBack={handleBackToSessions} />
       ) : selectedGroup && groupedSessions[selectedGroup] ? (
         <div className="space-y-6">
-          <button onClick={handleBackToGroups} className="flex items-center gap-2 text-cyan-700 dark:text-cyan-400 hover:text-cyan-600 font-bold transition group">
-            <span className="group-hover:-translate-x-1 transition-transform">←</span> Volver a eventos
+          <button
+            onClick={handleBackToGroups}
+            className="flex items-center gap-2 text-cyan-700 dark:text-cyan-400 hover:text-cyan-600 font-bold transition group"
+          >
+            <span className="group-hover:-translate-x-1 transition-transform">←</span>{" "}
+            Volver a eventos
           </button>
-          
+
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 dark:bg-gray-800/40 p-4 sm:p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
-            {/* OPTIMIZACIÓN RENDIMIENTO Y CLS (Mapa de circuito en panel interno con proporción estricta) */}
             <div className="relative w-full aspect-square max-w-112.5 mx-auto overflow-hidden rounded-xl">
               {circuitInfo && (
-                <Image 
-                  alt="Mapa del circuito de carrera" 
-                  src={`/circuitsMaps/${circuitInfo.circuit_code}.avif`} 
+                <Image
+                  alt="Mapa del circuito de carrera"
+                  src={`/circuitsMaps/${circuitInfo.circuit_code}.avif`}
                   fill
                   sizes="(max-width: 768px) 100vw, 450px"
                   className="object-contain"
@@ -301,14 +308,28 @@ function SessionsContent() {
             <div className="flex items-center justify-center w-full">
               {circuitInfo && (
                 <div className="p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 w-full shadow-xs">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">Información del circuito</h3>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4 border-b pb-2 border-gray-100 dark:border-gray-700">
+                    Información del circuito
+                  </h3>
                   <div className="space-y-2.5 text-sm">
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Nombre:</strong> {circuitInfo.circuit_name}</p>
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Longitud:</strong> {circuitInfo.circuit_length} km</p>
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Primer GP:</strong> {circuitInfo.first_grand_prix}</p>
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Número de vueltas:</strong> {circuitInfo.number_of_laps}</p>
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Vuelta rápida:</strong> {circuitInfo.fastest_lap_time}</p>
-                    <p className="text-gray-700 dark:text-gray-300"><strong>Distancia de carrera:</strong> {circuitInfo.race_distance} km</p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Nombre:</strong> {circuitInfo.circuit_name}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Longitud:</strong> {circuitInfo.circuit_length} km
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Primer GP:</strong> {circuitInfo.first_grand_prix}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Número de vueltas:</strong> {circuitInfo.number_of_laps}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Vuelta rápida:</strong> {circuitInfo.fastest_lap_time}
+                    </p>
+                    <p className="text-gray-700 dark:text-gray-300">
+                      <strong>Distancia de carrera:</strong> {circuitInfo.race_distance} km
+                    </p>
                   </div>
                 </div>
               )}
@@ -319,13 +340,15 @@ function SessionsContent() {
               <SessionCard
                 key={session.session_key}
                 {...session}
-                onClick={session.is_cancelled ? undefined : () => setSelectedSession(session)}
+                onClick={
+                  session.is_cancelled ? undefined : () => setSelectedSession(session)
+                }
               />
             ))}
           </div>
         </div>
       ) : (
-        /* 2. GRILLA PRINCIPAL DE EVENTOS (Con altura mínima para prevenir colapsos bruscos) */
+        /* 2. GRILLA PRINCIPAL DE EVENTOS */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 min-h-150">
           {sortedGroupKeys.map((key) => {
             const group = groupedSessions[key];
@@ -333,22 +356,24 @@ function SessionsContent() {
             return (
               <article
                 key={key}
-                onClick={firstSession.is_cancelled ? undefined : () => handleSelectionGroup(key)}
-                className={firstSession.is_cancelled 
-                  ? "cursor-not-allowed bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col" 
-                  : "cursor-pointer  hover:translate-y-1 hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col"
+                onClick={
+                  firstSession.is_cancelled ? undefined : () => handleSelectionGroup(key)
+                }
+                className={
+                  firstSession.is_cancelled
+                    ? "cursor-not-allowed bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col"
+                    : "cursor-pointer hover:translate-y-1 hover:shadow-xl transition-all duration-300 bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700 flex flex-col"
                 }
               >
                 <div className="flex justify-between items-start mb-4">
-                  {/* OPTIMIZACIÓN ACCESIBILIDAD: text-cyan-700 en modo claro para contraste */}
                   <span className="text-xs text-cyan-700 dark:text-cyan-400 font-bold uppercase tracking-widest bg-cyan-50 dark:bg-cyan-900/10 px-2 py-1 rounded">
                     {formatDate(firstSession.date_start)}
                   </span>
                   <div className="relative w-8 h-6 overflow-hidden rounded-xs border border-gray-100 dark:border-gray-700">
-                    <Image 
-                      src={getCountryFlag(firstSession.country_code)} 
-                      alt={`Bandera de ${firstSession.country_name || 'N/A'}`} 
-                      fill 
+                    <Image
+                      src={getCountryFlag(firstSession.country_code)}
+                      alt={`Bandera de ${firstSession.country_name || "N/A"}`}
+                      fill
                       sizes="32px"
                       className="object-cover"
                     />
@@ -356,14 +381,20 @@ function SessionsContent() {
                 </div>
                 <div className="flex items-center justify-between mb-4 gap-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{firstSession.location}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 italic">{firstSession.circuit_short_name}</p>
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                      {firstSession.location}
+                    </h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4 italic">
+                      {firstSession.circuit_short_name}
+                    </p>
                   </div>
-                  {/* OPTIMIZACIÓN CLS: El mapa del circuito se envuelve en un div proporcional con fallback */}
                   <div className="relative w-24 h-24 overflow-hidden shrink-0 bg-slate-50/50 dark:bg-gray-900/40 rounded-lg p-1 border border-gray-100 dark:border-gray-800/50">
                     <Image
                       alt={`Esquema del circuito de ${firstSession.location}`}
-                      src={`/circuitsMaps/${firstSession.location?.toLowerCase()}.svg` || `/circuitsMaps/${firstSession.circuit_short_name?.toLowerCase()}.svg`}
+                      src={
+                        `/circuitsMaps/${firstSession.location?.toLowerCase()}.svg` ||
+                        `/circuitsMaps/${firstSession.circuit_short_name?.toLowerCase()}.svg`
+                      }
                       fill
                       sizes="96px"
                       className="object-contain p-1"
@@ -373,13 +404,17 @@ function SessionsContent() {
                 <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-700 w-full">
                   <div className="text-sm font-semibold text-gray-600 dark:text-gray-400">
                     {firstSession.is_cancelled ? (
-                      <span className="text-xs text-red-600 dark:text-red-400 font-bold tracking-wider uppercase">Cancelado</span>
+                      <span className="text-xs text-red-600 dark:text-red-400 font-bold tracking-wider uppercase">
+                        Cancelado
+                      </span>
                     ) : (
                       <span>{group.length} Sesiones</span>
                     )}
                   </div>
                   {!firstSession.is_cancelled && (
-                    <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm hover:underline">Ver detalles →</span>
+                    <span className="text-cyan-700 dark:text-cyan-400 font-bold text-sm hover:underline">
+                      Ver detalles →
+                    </span>
                   )}
                 </div>
               </article>
