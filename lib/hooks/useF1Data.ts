@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useF1Context } from '@/lib/context/F1Context';
 
 interface UseF1DataOptions {
   endpoint: string;
   queryParams?: Record<string, string | number>;
-  refetchInterval?: number; // en ms, solo se ejecuta si se requiere recarga automática explícita
+  refetchInterval?: number;
 }
 
 interface UseF1DataReturn<T> {
@@ -17,26 +18,49 @@ interface UseF1DataReturn<T> {
 
 export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataReturn<T> {
   const { endpoint, queryParams, refetchInterval = 0 } = options;
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { getCache, setCache } = useF1Context();
+
+  const queryString = queryParams ? JSON.stringify(queryParams) : '';
+  const cacheKey = `${endpoint}-${queryString}`;
+
+  const cachedData = getCache(cacheKey) as T | undefined;
+
+  const [data, setData] = useState<T | null>(cachedData || null);
+  const [loading, setLoading] = useState<boolean>(!cachedData);
   const [error, setError] = useState<Error | null>(null);
 
+  // Patron oficial de React: Sincronizar el estado durante el RENDER si cambia la clave de caché
+  const [prevCacheKey, setPrevCacheKey] = useState<string>(cacheKey);
+  if (prevCacheKey !== cacheKey) {
+    setPrevCacheKey(cacheKey);
+    setData(cachedData || null);
+    setLoading(!cachedData);
+    setError(null);
+  }
+
   const buildUrl = useCallback(() => {
-    let url = `/api/f1/${endpoint}`;
+  let url = `/api/f1/${endpoint}`;
 
-    if (queryParams) {
-      const params = new URLSearchParams();
-      Object.entries(queryParams).forEach(([key, value]) => {
-        params.append(key, String(value));
-      });
-      url += `?${params.toString()}`;
-    }
+  if (queryString) {
+    const paramsObj = JSON.parse(queryString) as Record<string, string | number>;
+    const params = new URLSearchParams();
+    Object.entries(paramsObj).forEach(([key, value]) => {
+      params.append(key, String(value));
+    });
+    url += `?${params.toString()}`;
+  }
 
-    return url;
-  },[endpoint, queryParams]);
+  return url;
+}, [endpoint, queryString]);
 
   const fetchData = useCallback(
-    async () => {
+    async (ignoreCache = false) => {
+      // Si ya está en caché y no forzamos refetch, no hacemos nada
+      const existing = getCache(cacheKey) as T | undefined;
+      if (existing && !ignoreCache) {
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
@@ -48,38 +72,58 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
         }
 
         const result = await response.json();
+
         setData(result.data);
+        setCache(cacheKey, result.data);
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
         setLoading(false);
       }
     },
-    [buildUrl]
+    [buildUrl, cacheKey, getCache, setCache]
   );
 
   useEffect(() => {
-    const initialFetchTimer = setTimeout(() => {
-      fetchData();
-    }, 0);
+    let isMounted = true;
+
+    // Solo pedimos a la red si NO tenemos los datos en caché
+    const existing = getCache(cacheKey);
+    if (!existing) {
+      // Envolvemos en una macro-tarea para evitar setState síncrono directo en la pila del efecto
+      const timer = setTimeout(() => {
+        if (isMounted) {
+          fetchData(false);
+        }
+      }, 0);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
+    }
 
     let intervalId: NodeJS.Timeout | undefined;
     if (refetchInterval > 0) {
-      intervalId = setInterval(fetchData, refetchInterval);
+      intervalId = setInterval(() => {
+        if (isMounted) {
+          fetchData(true);
+        }
+      }, refetchInterval);
     }
 
     return () => {
-      clearTimeout(initialFetchTimer);
+      isMounted = false;
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, [fetchData, refetchInterval]);
+  }, [cacheKey, fetchData, getCache, refetchInterval]);
 
   return {
     data,
     loading,
     error,
-    refetch: fetchData,
+    refetch: () => fetchData(true),
   };
 }

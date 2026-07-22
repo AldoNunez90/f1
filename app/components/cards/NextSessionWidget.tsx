@@ -31,6 +31,7 @@ interface Session {
 }
 
 export default function NextSessionWidget() {
+  console.log("--> ¿Me ejecuto en servidor o cliente?", typeof window === "undefined" ? "SERVIDOR" : "CLIENTE");
   const [now, setNow] = useState<number>(() => Date.now());
 
   // Traer los datos de la temporada actual (2026)
