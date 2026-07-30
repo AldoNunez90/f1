@@ -59,29 +59,34 @@ export default async function connectDB(): Promise<typeof mongoose> {
 }
 
 /**
- * Conexión para datos históricos de F1 (apunta a 'f1db' / MONGODB_F1DB_URI)
+ * Conexión para datos de F1 (apunta a 'f1_dashboard')
  */
 export async function getF1Db(): Promise<mongoose.mongo.Db> {
   if (cached.f1dbCache.conn && cached.f1dbCache.conn.db) {
+    // Si ya está conectado y la DB actual coincide o está lista, la devuelve
     return cached.f1dbCache.conn.db;
   }
 
   if (!cached.f1dbCache.promise) {
     const uriToUse = MONGODB_F1DB_URI!;
-    // createConnection retorne una instancia de mongoose.Connection
-    cached.f1dbCache.promise = mongoose.createConnection(uriToUse, {
-      bufferCommands: false,
-    }).asPromise();
+    
+    // createConnection crea una instancia limpia para la DB de F1
+    cached.f1dbCache.promise = mongoose
+      .createConnection(uriToUse, {
+        bufferCommands: false,
+        dbName: 'f1_dashboard', // <-- Forzamos el dbName correcto a nivel conexión
+      })
+      .asPromise();
   }
 
   try {
     const conn = await cached.f1dbCache.promise;
     cached.f1dbCache.conn = conn;
 
-    // Retornamos el objeto Db de la conexión conectada a f1db
-    const db = conn.useDb('f1db').db;
+    // ✅ Usamos 'f1_dashboard' en lugar de 'f1db'
+    const db = conn.useDb('f1_dashboard').db;
     if (!db) {
-      throw new Error('No se pudo obtener el objeto Db de f1db');
+      throw new Error('No se pudo obtener el objeto Db de f1_dashboard');
     }
     return db;
   } catch (e) {
