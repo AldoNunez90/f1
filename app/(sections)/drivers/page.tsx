@@ -1,111 +1,163 @@
-'use client';
-
-import { useF1Data } from '@/lib/hooks/useF1Data';
+import { getAllDriversIndex } from '@/lib/f1-db';
 import { DriverCard } from '@/app/components/cards/DriverCard';
-import { LoadingGrid } from '@/app/components/common/Loading';
-import { ErrorMessage, EmptyState } from '@/app/components/common/Error';
-import { useState, useEffect } from 'react';
+import { EmptyState } from '@/app/components/common/Error';
+import { OrderSelector } from '@/app/components/common/OrderSelector';
+import Link from 'next/link';
 
-interface Driver {
-  driver_number?: number;
-  first_name?: string;
-  last_name?: string;
-  full_name?: string;
-  country_code?: string;
-  team_name?: string;
-  headshot_url?: string;
+interface DriverProfileIndex {
+  _id: string;
+  name?: string;
+  surname?: string;
+  fullName?: string;
+  permanentNumber?: number;
+  countryId?: string;
+  stats?: {
+    wins?: number;
+    podiums?: number;
+    poles?: number;
+    championships?: number;
+    fastestLaps?: number;
+  };
+  teamsHistory?: Array<{
+    year: number;
+    entrantId?: string;
+    constructorId?: string;
+  }>;
 }
 
-const driversConfig = {
-  endpoint: 'drivers',
-  queryParams: { session_key: "latest" }, 
-  refetchInterval: 0, // Desactivar actualización automática: se carga una vez y queda fija
+interface PageProps {
+  searchParams: Promise<{ order?: string; view?: string }>;
 }
 
-export default function DriversPage() {
-  const [order, setOrder] = useState('number'); 
-  const { data, loading, error, refetch } = useF1Data(driversConfig);
 
-  // OPTIMIZACIÓN DE RENDIMIENTO Y RENDERING:
-  // Mover el scroll al tope de la página dentro de un useEffect. 
-  // Ejecutarlo en el render principal causaba scrolls continuos ante cualquier cambio de estado (como reordenar).
-  useEffect(() => {
-    if (!loading && !error) {
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-    }
-  }, [loading, error]);
 
-  if (loading) return <LoadingGrid />;
-  if (error) return <ErrorMessage message={error.message} onRetry={refetch} />;
-    
-  const drivers = Array.isArray(data) ? data : [];
+export default async function DriversPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const viewMode = params.view || 'current';
+  const currentOrder = params.order || 'wins';
+
+  const isOnlyActive = viewMode === 'current';
+  const rawDrivers = await getAllDriversIndex(isOnlyActive);
+
+  const drivers = (rawDrivers as unknown as DriverProfileIndex[]) || [];
 
   if (drivers.length === 0) {
-    return <EmptyState title="Sin pilotos" description="No hay datos de pilotos disponibles" />;
+    return (
+      <EmptyState 
+        title="Sin pilotos encontrados" 
+        description="No se encontraron pilotos para los filtros seleccionados." 
+      />
+    );
   }
 
+  function extractSurname(name?: string): string {
+  if (!name) return '';
+  
+  const trimmed = name.trim();
+  const firstSpaceIndex = trimmed.indexOf(' ');
+
+  // Si tiene un espacio (ej: "Fernando Alonso"), recorta desde el espacio en adelante -> "Alonso"
+  if (firstSpaceIndex !== -1) {
+    return trimmed.slice(firstSpaceIndex + 1).trim();
+  }
+
+  // Si es una sola palabra, la devuelve entera
+  return trimmed;
+}
+
+  // Ordenamiento en el servidor
   const sortedDrivers = [...drivers].sort((a, b) => {
-    if (order === 'number') {
-      return (a.driver_number || 0) - (b.driver_number || 0); 
-    } else if (order === 'name') {
-      const nameA = `${a.last_name}`.trim();
-      const nameB = `${b.last_name}`.trim();
+    const statsA = a.stats || {};
+    const statsB = b.stats || {};
+
+    if (currentOrder === 'wins') {
+      return (statsB.wins || 0) - (statsA.wins || 0);
+    } else if (currentOrder === 'titles') {
+      return (statsB.championships || 0) - (statsA.championships || 0);
+    } else if (currentOrder === 'podiums') {
+      return (statsB.podiums || 0) - (statsA.podiums || 0);
+    } else if (currentOrder === 'name') {
+      const nameA = a.surname || a.name || '';
+      const nameB = b.surname || b.name || '';
       return nameA.localeCompare(nameB);
-    } else if (order === 'team') {
-      const teamA = a.team_name || '';
-      const teamB = b.team_name || '';
-      return teamA.localeCompare(teamB);
     }
     return 0;
   });
 
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Header y Filtros */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-5">
         <div>
           <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
-            Pilotos
+            {isOnlyActive ? 'Pilotos Temporada Actual' : 'Histórico de Pilotos de F1'}
           </h1>
-          {/* OPTIMIZACIÓN DE ACCESIBILIDAD (CONTRASTE):
-              Cambiamos text-cyan-600 a text-cyan-700 en modo claro para superar el ratio de contraste exigido por Lighthouse */}
           <p className="text-gray-600 dark:text-gray-400 mt-2 font-medium">
-            Total de pilotos: <span className="font-bold text-cyan-700 dark:text-cyan-400">{drivers.length}</span>
+            Mostrando <span className="font-bold text-cyan-700 dark:text-cyan-400">{drivers.length}</span> pilotos
           </p>
         </div>
-        
-        {/* OPTIMIZACIÓN DE ACCESIBILIDAD (FORMULARIOS):
-            - Cambiamos el <p> por un <label> enlazado mediante 'htmlFor' al id del selector.
-            - Esto resuelve directamente la advertencia "Select elements do not have associated label elements" */}
-        <div className="flex items-center gap-3">
-          <label 
-            htmlFor="pilotsOrder" 
-            className="text-gray-700 dark:text-gray-300 font-semibold text-sm"
-          >
-            Ordenar por:
-          </label>
-          <select 
-            name="pilotsOrder" 
-            id="pilotsOrder"  
-            className="px-4 py-2.5 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white bg-white dark:bg-gray-800 font-semibold rounded-lg shadow-xs focus:ring-2 focus:ring-cyan-500 focus:outline-hidden transition" 
-            onChange={(e) => setOrder(e.target.value)} 
-            value={order}
-          >
-            <option value="number">Número</option>
-            <option value="name">Apellido</option>
-            <option value="team">Equipo</option>
-          </select>
+
+        {/* Selector de Vistas y Orden */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex items-center border border-gray-200 dark:border-gray-700">
+            <Link
+              href="/drivers?view=current"
+              className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                isOnlyActive 
+                  ? 'bg-white dark:bg-gray-700 text-cyan-700 dark:text-cyan-400 shadow-xs' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Temporada Actual
+            </Link>
+            <Link
+              href="/drivers?view=all"
+              className={`px-4 py-2 text-xs font-bold rounded-lg transition ${
+                !isOnlyActive 
+                  ? 'bg-white dark:bg-gray-700 text-cyan-700 dark:text-cyan-400 shadow-xs' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              Todos (Histórico 900+)
+            </Link>
+          </div>
+
+          {/* Form con el Client Component del Selector */}
+          <form method="GET" className="flex items-center gap-2">
+            <input type="hidden" name="view" value={viewMode} />
+            <OrderSelector currentOrder={currentOrder} />
+          </form>
         </div>
       </div>
 
       {/* Grid de Pilotos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {sortedDrivers.map((driver: Driver) => (
-          <DriverCard 
-            key={driver.driver_number ?? driver.last_name ?? 'fallback'} 
-            {...driver} 
-          />
-        ))}
+        {sortedDrivers.map((driver) => {
+  const driverName = driver.name || driver.fullName || '';
+  const surname = extractSurname(driverName); // Retorna "Alonso" para "Fernando Alonso"
+
+  const teamRecent = driver.teamsHistory?.slice(-1)[0];
+  const teamName = teamRecent?.constructorId || teamRecent?.entrantId;
+
+  return (
+    <Link key={driver._id} href={`/drivers/${driver._id}`} className="block transition-transform hover:-translate-y-1 h-full">
+      <DriverCard 
+  id={driver._id}
+  fullName={driverName || ''}
+  surname={surname || ''}
+  countryId={driver.countryId || ''}
+  teamName={teamName || ''}
+  wins={driver.stats?.wins || 0}
+  championships={driver.stats?.championships || 0}
+  podiums={driver.stats?.podiums || 0}
+  fastestLaps={driver.stats?.fastestLaps}
+  poles={driver.stats?.poles}
+  permanentNumber={driver.permanentNumber}
+/>
+    </Link>
+  );
+})}
       </div>
     </div>
   );

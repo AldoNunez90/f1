@@ -243,9 +243,9 @@ export default function Home() {
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
                   Cuenta regresiva
                 </p>
-                <p className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
+                <div className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
                   <Countdown targetDate={nextSession.date_start} />
-                </p>
+                </div>
               </div>
 
               <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
