@@ -21,7 +21,6 @@ export interface DriverCardProps {
 }
 
 export function DriverCard({
-  id,
   name,
   fullName,
   surname,
