@@ -7,6 +7,19 @@ interface CustomDocument {
   [key: string]: unknown;
 }
 
+// Interfaces de apoyo estrictas (sin 'any')
+interface FamilyRelationship {
+  relatedDriverId: string;
+  type: string;
+}
+
+interface TeamHistoryItem {
+  year: number;
+  constructorId?: string;
+  entrantId?: string;
+  engine?: string;
+}
+
 // Helper interno para validar la conexión
 async function getValidatedDb() {
   const db = await getF1Db();
@@ -19,7 +32,6 @@ async function getValidatedDb() {
 }
 
 export type DriverViewMode = "active" | "rookies" | "all";
-
 
 // ========================================================
 // 🏎️ CONSULTAS DE PILOTOS (drivers_profile)
@@ -34,37 +46,111 @@ export const getDriverProfile = (driverId: string) =>
     async () => {
       const db = await getValidatedDb();
 
-      const results = await db
+      // 1. Usar 'as unknown' para castear _id sin activar la regla 'no-explicit-any'
+      const driver = await db
         .collection<CustomDocument>("drivers_profile")
-        .aggregate([
-          { $match: { _id: driverId } },
-          {
-            $lookup: {
-              from: "countries",
-              localField: "countryId",
-              foreignField: "id",
-              as: "countryInfo",
-            },
-          },
-          {
-            $addFields: {
-              alpha2Code: {
-                $arrayElemAt: ["$countryInfo.alpha2Code", 0],
-              },
-            },
-          },
-          {
-            $project: {
-              countryInfo: 0,
-            },
-          },
-        ])
-        .toArray();
+        .findOne({ _id: driverId as unknown as string });
 
-      return results[0] || null;
+      if (!driver) return null;
+
+      // 2. Traer la bandera (alpha2Code)
+      const countryId = driver.countryId as string | undefined;
+      const country = countryId
+        ? await db.collection("countries").findOne({ id: countryId })
+        : null;
+      const alpha2Code = (country?.alpha2Code as string) || null;
+
+      // 3. Resolver los nombres de la Familia (priorizando 'name')
+      let familyWithDetails: Array<{ driverId: string; name: string; relationship: string }> = [];
+      const familyRelationships = driver.familyRelationships as FamilyRelationship[] | undefined;
+
+      if (Array.isArray(familyRelationships) && familyRelationships.length > 0) {
+        const familyIds = familyRelationships.map((f: FamilyRelationship) => f.relatedDriverId);
+        
+        const relativeDocs = await db
+          .collection<CustomDocument>("drivers_profile")
+          .find(
+            { _id: { $in: familyIds as unknown as string[] } },
+            { projection: { _id: 1, name: 1, fullName: 1 } }
+          )
+          .toArray();
+
+        const relativeMap = new Map(
+          relativeDocs.map((d: CustomDocument) => [
+            d._id,
+            (d.name as string) || (d.fullName as string) || d._id,
+          ])
+        );
+
+        familyWithDetails = familyRelationships.map((f: FamilyRelationship) => ({
+          driverId: f.relatedDriverId,
+          name: relativeMap.get(f.relatedDriverId) || f.relatedDriverId,
+          relationship: f.type,
+        }));
+      }
+
+      // 4. Calcular compañeros de equipo agrupados por Año y Escudería (priorizando 'name')
+      const teammatesByYear: Record<number, Array<{ id: string; name: string; constructorId: string }>> = {};
+      const teamsHistory = driver.teamsHistory as TeamHistoryItem[] | undefined;
+
+      if (Array.isArray(teamsHistory) && teamsHistory.length > 0) {
+        const searchConditions = teamsHistory
+          .filter((t: TeamHistoryItem) => Boolean(t.constructorId))
+          .map((t: TeamHistoryItem) => ({
+            "teamsHistory.year": t.year,
+            "teamsHistory.constructorId": t.constructorId,
+          }));
+
+        if (searchConditions.length > 0) {
+          const matchedTeammates = await db
+            .collection<CustomDocument>("drivers_profile")
+            .find(
+              {
+                _id: { $ne: driverId as unknown as string },
+                $or: searchConditions as unknown as Record<string, unknown>[],
+              },
+              { projection: { _id: 1, name: 1, fullName: 1, teamsHistory: 1 } }
+            )
+            .toArray();
+
+          teamsHistory.forEach((mySeason: TeamHistoryItem) => {
+            if (!mySeason.constructorId) return;
+
+            matchedTeammates.forEach((tm: CustomDocument) => {
+              const tmHistory = tm.teamsHistory as TeamHistoryItem[] | undefined;
+              const shared = tmHistory?.some(
+                (hisSeason: TeamHistoryItem) =>
+                  hisSeason.year === mySeason.year &&
+                  hisSeason.constructorId === mySeason.constructorId
+              );
+
+              if (shared) {
+                if (!teammatesByYear[mySeason.year]) {
+                  teammatesByYear[mySeason.year] = [];
+                }
+                if (!teammatesByYear[mySeason.year].some((x) => x.id === tm._id)) {
+                  teammatesByYear[mySeason.year].push({
+                    id: tm._id,
+                    // 👈 CAMBIO AQUÍ: Prioriza tm.name sobre tm.fullName
+                    name: (tm.name as string) || (tm.fullName as string) || tm._id,
+                    constructorId: mySeason.constructorId!,
+                  });
+                }
+              }
+            });
+          });
+        }
+      }
+
+      return {
+        ...driver,
+        alpha2Code,
+        familyWithDetails,
+        teammatesByYear,
+      };
     },
-    [`driver-profile-${driverId}-v10`],
-    { revalidate: 3600 },
+    [`driver-profile-${driverId}-v12`], // 👈 CAMBIO AQUÍ: v11 -> v12 para invalidar el cache en Next.js
+    { revalidate: 3600 }
   )();
 
 export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
@@ -72,7 +158,6 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
     async () => {
       const db = await getValidatedDb();
 
-      // Condición base: Tienen actividad/participación en 2026
       const in2026Season = {
         $or: [
           { active: true },
@@ -83,7 +168,6 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
         ],
       };
 
-      // Condición para número permanente de carrera (titular)
       const hasPermanentNumber = {
         $or: [
           { permanentNumber: { $exists: true, $ne: null } },
@@ -94,12 +178,10 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
       let query = {};
 
       if (mode === "active") {
-        // Titulares 2026: Están en la temporada Y tienen número oficial asignado
         query = {
           $and: [in2026Season, hasPermanentNumber],
         };
       } else if (mode === "rookies") {
-        // Rookies / FP1: Tienen actividad en 2026 PERO NO tienen número permanente asignado
         query = {
           $and: [
             in2026Season,
@@ -112,7 +194,6 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
           ],
         };
       } else {
-        // "all": Histórico completo sin filtros de temporada ni dorsales
         query = {};
       }
 
@@ -156,7 +237,7 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
       return drivers;
     },
     [`all-drivers-index-mode-${mode}-v10`],
-    { revalidate: 3600 },
+    { revalidate: 3600 }
   )();
 
 // ========================================================
@@ -169,21 +250,8 @@ export const getCircuitProfile = (circuitId: string) =>
       const db = await getValidatedDb();
       return await db
         .collection<CustomDocument>("circuits_profile")
-        .findOne({ _id: circuitId });
+        .findOne({ _id: circuitId as unknown as string });
     },
     [`circuit-profile-${circuitId}`],
-    { revalidate: 3600 },
+    { revalidate: 3600 }
   )();
-
-export const getAllCircuitsIndex = unstable_cache(
-  async () => {
-    const db = await getValidatedDb();
-    return await db
-      .collection<CustomDocument>("circuits_profile")
-      .find({})
-      .sort({ totalRaces: -1 })
-      .toArray();
-  },
-  ["all-circuits-index-v3"],
-  { revalidate: 3600 },
-);
