@@ -27,17 +27,44 @@ export type DriverViewMode = "active" | "rookies" | "all";
 
 /**
  * Obtiene el perfil completo de un piloto por su ID (ej: 'max-verstappen')
+ * e incluye el alpha2Code del país desde la colección 'countries'
  */
 export const getDriverProfile = (driverId: string) =>
   unstable_cache(
     async () => {
       const db = await getValidatedDb();
-      return await db
+
+      const results = await db
         .collection<CustomDocument>("drivers_profile")
-        .findOne({ _id: driverId });
+        .aggregate([
+          { $match: { _id: driverId } },
+          {
+            $lookup: {
+              from: "countries",
+              localField: "countryId",
+              foreignField: "id",
+              as: "countryInfo",
+            },
+          },
+          {
+            $addFields: {
+              alpha2Code: {
+                $arrayElemAt: ["$countryInfo.alpha2Code", 0],
+              },
+            },
+          },
+          {
+            $project: {
+              countryInfo: 0,
+            },
+          },
+        ])
+        .toArray();
+
+      return results[0] || null;
     },
-    [`driver-profile-${driverId}`],
-    { revalidate: 3600 }, // Cambiado a revalidate en segundos para producción
+    [`driver-profile-${driverId}-v10`],
+    { revalidate: 3600 },
   )();
 
 export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
@@ -91,25 +118,44 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
 
       const drivers = await db
         .collection<CustomDocument>("drivers_profile")
-        .find(query, {
-          projection: {
-            name: 1,
-            fullName: 1,
-            countryId: 1,
-            stats: 1,
-            active: 1,
-            teamsHistory: 1,
-            permanentNumber: 1,
-            driverNumber: 1,
-            role: 1, // Por si guardás 'Reserve' / 'Test Driver'
+        .aggregate([
+          { $match: query },
+          { $sort: { "stats.wins": -1 } },
+          {
+            $lookup: {
+              from: "countries",
+              localField: "countryId",
+              foreignField: "id",
+              as: "countryInfo",
+            },
           },
-        })
-        .sort({ "stats.wins": -1 })
+          {
+            $addFields: {
+              alpha2Code: {
+                $arrayElemAt: ["$countryInfo.alpha2Code", 0],
+              },
+            },
+          },
+          {
+            $project: {
+              name: 1,
+              fullName: 1,
+              countryId: 1,
+              alpha2Code: 1,
+              stats: 1,
+              active: 1,
+              teamsHistory: 1,
+              permanentNumber: 1,
+              driverNumber: 1,
+              role: 1,
+            },
+          },
+        ])
         .toArray();
 
       return drivers;
     },
-    [`all-drivers-index-mode-${mode}-v9`],
+    [`all-drivers-index-mode-${mode}-v10`],
     { revalidate: 3600 },
   )();
 

@@ -96,17 +96,17 @@ export function formatTeamName(team: string | undefined): string {
 
 export function getTeamColor(team: string | undefined): string {
   const teamColors: Record<string, string> = {
-   'RED BULL RACING': 'from-blue-800 to-blue-950',
-  'FERRARI': 'from-red-600 to-red-800',
-  'MERCEDES': 'from-teal-400 to-teal-600',
-  'MCLAREN': 'from-orange-500 to-orange-700',
-  'ASTON MARTIN': 'from-emerald-700 to-emerald-900',
-  'ALPINE': 'from-blue-600 to-pink-500',
-  'WILLIAMS': 'from-blue-500 to-blue-800',
-  'HAAS F1 TEAM': 'from-zinc-600 to-zinc-800',
-  'RACING BULLS': 'from-blue-500 to-blue-700',
-  'AUDI': 'from-red-600 to-neutral-900',
-  'CADILLAC': 'from-slate-700 to-slate-900'
+    'RED BULL RACING': 'from-blue-800 to-blue-950',
+    'FERRARI': 'from-red-600 to-red-800',
+    'MERCEDES': 'from-teal-400 to-teal-600',
+    'MCLAREN': 'from-orange-500 to-orange-700',
+    'ASTON MARTIN': 'from-emerald-700 to-emerald-900',
+    'ALPINE': 'from-blue-600 to-pink-500',
+    'WILLIAMS': 'from-blue-500 to-blue-800',
+    'HAAS F1 TEAM': 'from-zinc-600 to-zinc-800',
+    'RACING BULLS': 'from-blue-500 to-blue-700',
+    'AUDI': 'from-red-600 to-neutral-900',
+    'CADILLAC': 'from-slate-700 to-slate-900'
   };
   return teamColors[team?.toUpperCase() || ''] || 'from-gray-500 to-gray-700';
 }
@@ -121,34 +121,37 @@ export function extractTeamFromDriver(data: unknown): string | undefined {
   return record.team as string | undefined;
 }
 
-export function getCountryFlag(countryCode: string | undefined): string {
-  if (!countryCode) return '🌐'; // Retorna un globo si no hay código
+/**
+ * Genera la URL de la bandera desde FlagCDN a partir del código de país.
+ * Acepta Alpha-2 (ej: "AR", "HK") devuelto por la colección countries de MongoDB,
+ * o Alpha-3 / fallback como respaldo.
+ */
+export function getCountryFlag(countryCode: string | undefined | null): string {
+  if (!countryCode || typeof countryCode !== 'string') return '🌐';
 
-  // Mapa de códigos Alpha-3 (API F1) a Alpha-2 (Emoji compatible)
+  let code = countryCode.trim().toUpperCase();
+
+  // Fallback si recibe un código Alpha-3 legacy
   const alpha3ToAlpha2: Record<string, string> = {
     'BRN': 'BH', 'KSA': 'SA', 'AUS': 'AU', 'JPN': 'JP', 'CHN': 'CN',
     'USA': 'US', 'MON': 'MC', 'CAN': 'CA', 'ESP': 'ES', 'AUT': 'AT',
     'GBR': 'GB', 'HUN': 'HU', 'BEL': 'BE', 'NED': 'NL', 'ITA': 'IT',
-    'AZE': 'AZ', 'SGP': 'SG', 'MEX': 'MX', 'BRA': 'BR', 'QAT': 'QA', // Qatar
-    'UAE': 'AE', 'FRA': 'FR', 'PRT': 'PT', 'TUR': 'TR', 'MCO': 'MC', // Mónaco
-    'ZAF': 'ZA', 'KOR': 'KR', 'RUS': 'RU', 'DEU': 'DE', 'CHE': 'CH', // Sudáfrica, Corea del Sur, Rusia, Alemania, Suiza
-    'ARG': 'AR', 'COL': 'CO', 'CHL': 'CL', 'PER': 'PE', 'URY': 'UY', // Argentina, Colombia, Chile, Perú, Uruguay
-    'VEN': 'VE', 'ECU': 'EC', 'BOL': 'BO', 'PRY': 'PY', 'CUB': 'CU', // Venezuela, Ecuador, Bolivia, Paraguay, Cuba
+    'AZE': 'AZ', 'SGP': 'SG', 'MEX': 'MX', 'BRA': 'BR', 'QAT': 'QA',
+    'UAE': 'AE', 'FRA': 'FR', 'PRT': 'PT', 'TUR': 'TR', 'MCO': 'MC',
+    'ZAF': 'ZA', 'KOR': 'KR', 'RUS': 'RU', 'DEU': 'DE', 'CHE': 'CH',
+    'ARG': 'AR', 'COL': 'CO', 'CHL': 'CL', 'PER': 'PE', 'URY': 'UY',
+    'VEN': 'VE', 'ECU': 'EC', 'BOL': 'BO', 'PRY': 'PY', 'CUB': 'CU',
   };
 
-  let code = countryCode.toUpperCase();
-
-  // Si es un código de 3 letras, lo traducimos. Si no está en el mapa, probamos con las primeras 2.
   if (code.length === 3) {
-    code = alpha3ToAlpha2[code] || code; // Si no está en el mapa, mantenemos el código de 3 letras para el CDN si es posible
+    code = alpha3ToAlpha2[code] || code;
   }
 
   if (code.length !== 2) return '🌐';
 
-  
-  // Retorna la URL de la imagen de la bandera
   return `https://flagcdn.com/64x48/${code.toLowerCase()}.png`;
 }
+
 export function formatNumber(num: number | undefined, decimals = 2): string {
   if (num === undefined || num === null) return 'N/A';
   return num.toFixed(decimals);
@@ -169,11 +172,10 @@ export function getSessionStatusBadge(dateStart: string | undefined, dateEnd: st
   }
 
   // 2. Completada: Si date_end tiene una hora diferente de 00:00:00
-  // Buscamos la ausencia del marcador de medianoche exacta de la API
   if (dateEnd && !dateEnd.includes('T00:00:00')) {
     return { text: 'Completada', color: 'bg-gray-500' };
   }
 
-  // 3. En vivo: Si ya empezó y date_end sigue en 00:00:00 (marcador de sesión abierta)
+  // 3. En vivo: Si ya empezó y date_end sigue en 00:00:00
   return { text: 'En vivo', color: 'bg-green-500' };
 }

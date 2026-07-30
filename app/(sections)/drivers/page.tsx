@@ -23,6 +23,7 @@ interface DriverProfileIndex {
     entrantId?: string;
     constructorId?: string;
   }>;
+  alphaCode2?: string;
 }
 
 interface PageProps {
@@ -173,6 +174,7 @@ export default async function DriversPage({ searchParams }: PageProps) {
                 fastestLaps={driver.stats?.fastestLaps}
                 poles={driver.stats?.poles}
                 permanentNumber={driver.permanentNumber}
+                alpha2Code={driver.alpha2Code}
               />
             </Link>
           );

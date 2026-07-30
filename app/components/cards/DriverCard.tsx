@@ -8,7 +8,8 @@ export interface DriverCardProps {
   fullName?: string;
   name?: string;
   surname?: string;
-  countryId?: string; // ej: "ARG", "GBR", "NLD"
+  countryId?: string; // ej: "argentina", "ARG"
+  alpha2Code?: string; // ej: "AR", "GB", "HK" (proveniente del $lookup con countries)
   permanentNumber?: number;
   teamName?: string;
   teamColour?: string;
@@ -19,13 +20,13 @@ export interface DriverCardProps {
   fastestLaps?: number;
 }
 
-
 export function DriverCard({
   id,
   name,
   fullName,
   surname,
   countryId,
+  alpha2Code,
   permanentNumber,
   teamName,
   teamColour,
@@ -43,17 +44,15 @@ export function DriverCard({
   let extractedLastName = '';
 
   if (cleanSurname) {
-    // Si surname ya vino definido (ej: "Alonso" o "de Vries")
     extractedLastName = cleanSurname;
   } else {
-    // Si no hay surname, extraemos todo después del primer espacio de displayName
     const spaceIndex = displayName.indexOf(' ');
     extractedLastName = spaceIndex !== -1 
       ? displayName.slice(spaceIndex + 1).trim() 
       : displayName;
   }
 
-  // 2. Fallbacks de código de país (ISO Alpha-2 para getCountryFlag)
+  // 2. Fallbacks de código de país por si el documento MongoDB no tiene countryId
   const fallbackDriverCountryCodes: Record<string, string> = {
     Russell: 'GB',
     Antonelli: 'IT',
@@ -79,7 +78,8 @@ export function DriverCard({
     Bottas: 'FI',
   };
 
-  const driverCountryCode = countryId || fallbackDriverCountryCodes[extractedLastName] || 'GB';
+  // Prioridad: alpha2Code > countryId > fallback por apellido > 'GB'
+  const driverCountryCode = alpha2Code || countryId || fallbackDriverCountryCodes[extractedLastName] || 'GB';
   const countryFlag = getCountryFlag(driverCountryCode);
   const countryFlagUrl = countryFlag && countryFlag.startsWith('http') ? countryFlag : undefined;
 
@@ -109,7 +109,6 @@ export function DriverCard({
     Bottas: 'https://media.formula1.com/image/upload/c_lfill,w_440/q_auto/d_common:f1:2026:fallback:driver:2026fallbackdriverright.webp/v1740000001/common/f1/2026/cadillac/valbot01/2026cadillacvalbot01right.webp',
   };
 
-  
   const driverImageUrl = driversImgMap[extractedLastName] || "";
 
   // 4. Colores e identidades visuales
@@ -140,7 +139,6 @@ export function DriverCard({
   const colorHex = teamColour ? `#${teamColour}` : undefined;
   const teamColorWithAlpha = colorHex ? hexToRgba(colorHex, 0.15) : undefined;
   const gradient = teamColors[teamName?.toUpperCase() || ''] || 'from-gray-700 to-gray-900';
-
 
   return (
     <article 
@@ -174,16 +172,15 @@ export function DriverCard({
 
         {/* Imagen del piloto */}
         <div className="relative w-full max-w-44 aspect-320/400 mt-3 overflow-hidden rounded-lg">
-          
-          {driverImageUrl != "" &&
-          <Image
-          src={driverImageUrl}
-          alt={`Fotografía de ${displayName}`}
-          fill
-          sizes="(max-width: 640px) 100vw, 176px"
-          className="object-cover object-top"
-          />
-        }
+          {driverImageUrl !== "" && (
+            <Image
+              src={driverImageUrl}
+              alt={`Fotografía de ${displayName}`}
+              fill
+              sizes="(max-width: 640px) 100vw, 176px"
+              className="object-cover object-top"
+            />
+          )}
         </div>
 
         {/* Métricas Históricas de Mongo */}
@@ -200,7 +197,7 @@ export function DriverCard({
             <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Poles</p>
             <p className="text-lg font-black text-cyan-600 dark:text-cyan-400">{poles}</p>
           </div>
-           <div>
+          <div>
             <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Vueltas Rápidas</p>
             <p className="text-lg font-black text-cyan-600 dark:text-cyan-400">{fastestLaps}</p>
           </div>
