@@ -20,7 +20,7 @@ export interface DriverCardProps {
   fastestLaps?: number;
 }
 
-export function DriverCard({
+export default function DriverCard({
   id,
   name,
   fullName,
