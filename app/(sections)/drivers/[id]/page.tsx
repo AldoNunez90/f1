@@ -66,6 +66,7 @@ export default async function DriverDetailPage({ params }: PageProps) {
       constructorId?: string;
       entrantId?: string;
       engine?: string;
+      testDriver?: boolean;
     }>;
     historicTeammatesDetails?: Array<{
       _id: string;
@@ -80,7 +81,6 @@ export default async function DriverDetailPage({ params }: PageProps) {
     `${driver.firstName || ""} ${driver.lastName || ""}`.trim();
   const flagUrl = getCountryFlag(driver.alpha2Code || driver.countryId);
   const stats = driver.stats || {};
-  const records = driver.records || {};
 
   // Diccionario ampliado de parentescos
   const relationshipTranslation: Record<string, string> = {
@@ -278,7 +278,15 @@ export default async function DriverDetailPage({ params }: PageProps) {
                 {stats.poles || 0}
               </p>
             </div>
-
+            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                Carreras disputadas
+              </p>
+              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                {stats.starts || 0}
+              </p>
+            </div>
+          
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                 Vueltas Rápidas
@@ -296,43 +304,39 @@ export default async function DriverDetailPage({ params }: PageProps) {
                 {stats.grandSlams || 0}
               </p>
             </div>
-          </div>
 
-          {/* Estadísticas de Carreras Sprint */}
-
-          {(stats?.sprintRaceStarts ?? 0) > 0 && (
-            <div className="bg-linear-to-br from-gray-900 to-slate-900 text-white rounded-xl p-6 border border-gray-800 shadow-md space-y-4">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-cyan-400">
-                Rendimiento en Carreras Sprint
-              </h2>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-xs text-gray-400 font-semibold uppercase">
-                    Disputadas
+            {/* Sprints  */}
+            {(stats?.sprintRaceStarts ?? 0) > 0 && (
+              <>
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                    Sprints disputadas
                   </p>
-                  <p className="text-2xl font-black text-white mt-1">
+                  <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                     {stats.sprintRaceStarts || 0}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-semibold uppercase">
-                    Victorias Sprint
+                <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+                  <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                    Victorias (Sprints)
                   </p>
-                  <p className="text-2xl font-black text-cyan-400 mt-1">
+                  <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                     {stats.sprintRaceWins || 0}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-semibold uppercase">
-                    Podios Sprint
-                  </p>
-                  <p className="text-2xl font-black text-white mt-1">
-                    {stats.sprintRacePodiums || 0}
-                  </p>
-                </div>
-              </div>
+             
+              </>
+            )}
+
+            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
+                Silly Seassons
+              </p>
+              <p className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                {0}
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
 
@@ -349,8 +353,8 @@ export default async function DriverDetailPage({ params }: PageProps) {
                 <tr>
                   <th className="p-3 rounded-l-lg">Año</th>
                   <th className="p-3">Constructor / Escudería</th>
-                  <th className="p-3">Motor</th>
-                  <th className="p-3 rounded-r-lg">Compañero(s) de Equipo</th>
+                  <th className="p-3 hidden md:table-cell">Motor</th>
+                  <th className="p-3 rounded-r-lg">Compañero de Equipo</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800 font-medium">
@@ -369,28 +373,47 @@ export default async function DriverDetailPage({ params }: PageProps) {
                       <td className="p-3 text-gray-900 dark:text-gray-100 uppercase tracking-wide">
                         {item.constructorId || item.entrantId || "N/A"}
                       </td>
-                      <td className="p-3 text-gray-500 dark:text-gray-400 uppercase">
+                      <td className="p-3 text-gray-500 dark:text-gray-400 uppercase hidden md:table-cell ">
                         {item.engine || "N/A"}
                       </td>
                       <td className="p-3">
-                        {teammatesThisYear.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5">
-                            {teammatesThisYear.map((tm) => (
-                              <Link
-                                key={tm.id}
-                                href={`/drivers/${tm.id}`}
-                                className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-500 text-xs font-semibold text-gray-800 dark:text-gray-200 transition inline-block"
-                              >
-                                {tm.name}
-                              </Link>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">
-                            Sin registros de compañero
-                          </span>
-                        )}
-                      </td>
+  {(() => {
+    // 1. Verificamos si en esa temporada el piloto figura como probador/reserva
+    const isTestDriverThisYear = item.testDriver === true;
+
+    if (isTestDriverThisYear) {
+      return (
+        <span className="text-xs text-amber-500/90 dark:text-amber-400 font-medium italic bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+          Test driver
+        </span>
+      );
+    }
+
+    // 2. Si no es probador, renderizamos la lista de compañeros normalmente
+    if (teammatesThisYear.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {teammatesThisYear.map((tm) => (
+            <Link
+              key={tm.id}
+              href={`/drivers/${tm.id}`}
+              className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-500 text-xs font-semibold text-gray-800 dark:text-gray-200 transition inline-block"
+            >
+              {tm.name}
+            </Link>
+          ))}
+        </div>
+      );
+    }
+
+    // 3. Si era titular pero verdaderamente no hay registro de compañero
+    return (
+      <span className="text-xs text-gray-400 italic">
+        Sin registros de compañero
+      </span>
+    );
+  })()}
+</td>
                     </tr>
                   );
                 })}

@@ -50,9 +50,11 @@ export function formatDateTimeWithOffset(dateString: string | undefined, gmtOffs
   if (Number.isNaN(date.getTime())) return 'N/A';
 
   const offsetMinutes = parseGmtOffsetToMinutes(gmtOffset);
+  
   const localDate = offsetMinutes === null ? date : new Date(date.getTime() + offsetMinutes * 60000);
 
   return localDate.toLocaleString('es-ES', {
+    timeZone: 'UTC',
     year: 'numeric',
     month: 'short',
     day: 'numeric',

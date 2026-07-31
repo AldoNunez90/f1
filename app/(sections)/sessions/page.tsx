@@ -119,7 +119,6 @@ function SessionsContent() {
         (a, b) =>
           new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
       );
-
     const liveSession = validSessions.find((session) => {
       const start = new Date(session.date_start!).getTime();
       const end = session.date_end ? new Date(session.date_end).getTime() : null;
@@ -134,6 +133,7 @@ function SessionsContent() {
       validSessions[0]
     );
   }, [sessions, now]);
+      console.log(nextSession)
 
   const circuitInfo = useMemo(() => {
     if (!selectedGroup || !groupedSessions[selectedGroup]) return null;

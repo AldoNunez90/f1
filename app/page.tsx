@@ -160,7 +160,7 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end flex items-center md:block">
+      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end  items-center hidden md:block">
         <div className="hidden md:block absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
@@ -168,18 +168,6 @@ export default function Home() {
             fill
             priority
             sizes="(max-width: 1200px) 100vw, 1200px"
-            className="object-cover object-center z-0"
-          />
-        </div>
-
-        <div className="block md:hidden absolute inset-0">
-          <Image
-            src="/landingImgMobile.webp"
-            alt="F1 Hub Hero Background Mobile"
-            fill
-            priority
-            fetchPriority="high"
-            sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover object-center z-0"
           />
         </div>

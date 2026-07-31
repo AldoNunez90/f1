@@ -13,11 +13,15 @@ interface FamilyRelationship {
   type: string;
 }
 
-interface TeamHistoryItem {
-  year: number;
-  constructorId?: string;
-  entrantId?: string;
-  engine?: string;
+// Helper interno para procesar el string de rondas ("1;2;3;4") a un Set numérico
+function parseRounds(roundsStr?: string): Set<number> {
+  if (!roundsStr) return new Set();
+  return new Set(
+    roundsStr
+      .split(";")
+      .map((r) => parseInt(r.trim(), 10))
+      .filter((r) => !isNaN(r))
+  );
 }
 
 // Helper interno para validar la conexión
@@ -89,56 +93,96 @@ export const getDriverProfile = (driverId: string) =>
         }));
       }
 
-      // 4. Calcular compañeros de equipo agrupados por Año y Escudería (priorizando 'name')
+      // 4. Calcular compañeros de equipo exactos mediante intersección de GPs (seasons_entrance_drivers)
       const teammatesByYear: Record<number, Array<{ id: string; name: string; constructorId: string }>> = {};
-      const teamsHistory = driver.teamsHistory as TeamHistoryItem[] | undefined;
 
-      if (Array.isArray(teamsHistory) && teamsHistory.length > 0) {
-        const searchConditions = teamsHistory
-          .filter((t: TeamHistoryItem) => Boolean(t.constructorId))
-          .map((t: TeamHistoryItem) => ({
-            "teamsHistory.year": t.year,
-            "teamsHistory.constructorId": t.constructorId,
+      // Consultar las participaciones del piloto actual (excluyendo testDriver)
+      const myEntrances = await db
+        .collection<CustomDocument>("seasons_entrants_drivers")
+        .find({
+          driverId: driverId,
+          testDriver: { $ne: true },
+        })
+        .toArray();
+
+      if (myEntrances.length > 0) {
+        // Construimos filtros para buscar otros pilotos en los mismos años y escuderías
+        const searchConditions = myEntrances
+          .filter((e) => Boolean(e.constructorId) && Boolean(e.year))
+          .map((e) => ({
+            year: e.year,
+            constructorId: e.constructorId,
           }));
 
         if (searchConditions.length > 0) {
-          const matchedTeammates = await db
-            .collection<CustomDocument>("drivers_profile")
-            .find(
-              {
-                _id: { $ne: driverId as unknown as string },
-                $or: searchConditions as unknown as Record<string, unknown>[],
-              },
-              { projection: { _id: 1, name: 1, fullName: 1, teamsHistory: 1 } }
-            )
+          // Buscamos todas las participaciones de compañeros titulares en esas mismas condiciones
+          const matchedEntrances = await db
+            .collection<CustomDocument>("seasons_entrants_drivers")
+            .find({
+              driverId: { $ne: driverId },
+              testDriver: { $ne: true },
+              $or: searchConditions as unknown as Record<string, unknown>[],
+            })
             .toArray();
 
-          teamsHistory.forEach((mySeason: TeamHistoryItem) => {
-            if (!mySeason.constructorId) return;
+          if (matchedEntrances.length > 0) {
+            // Obtenemos las identidades de los pilotos encontrados
+            const teammateDriverIds = Array.from(
+              new Set(matchedEntrances.map((e) => e.driverId as string))
+            );
 
-            matchedTeammates.forEach((tm: CustomDocument) => {
-              const tmHistory = tm.teamsHistory as TeamHistoryItem[] | undefined;
-              const shared = tmHistory?.some(
-                (hisSeason: TeamHistoryItem) =>
-                  hisSeason.year === mySeason.year &&
-                  hisSeason.constructorId === mySeason.constructorId
-              );
+            const teammateDocs = await db
+              .collection<CustomDocument>("drivers_profile")
+              .find(
+                { _id: { $in: teammateDriverIds as unknown as string[] } },
+                { projection: { _id: 1, name: 1, fullName: 1 } }
+              )
+              .toArray();
 
-              if (shared) {
-                if (!teammatesByYear[mySeason.year]) {
-                  teammatesByYear[mySeason.year] = [];
+            const teammateMap = new Map(
+              teammateDocs.map((d: CustomDocument) => [
+                d._id,
+                (d.name as string) || (d.fullName as string) || d._id,
+              ])
+            );
+
+            // Verificamos si coincidieron en al menos una carrera (round)
+            myEntrances.forEach((mySeason) => {
+              const myRounds = parseRounds(mySeason.rounds as string | undefined);
+              const seasonYear = mySeason.year as number;
+              const constructorId = mySeason.constructorId as string;
+
+              matchedEntrances.forEach((hisSeason) => {
+                if (
+                  hisSeason.year === seasonYear &&
+                  hisSeason.constructorId === constructorId
+                ) {
+                  const hisRounds = parseRounds(hisSeason.rounds as string | undefined);
+
+                  // Intersección de rondas: ¿Compartieron al menos 1 Gran Premio?
+                  const sharedGP = Array.from(myRounds).some((round) =>
+                    hisRounds.has(round)
+                  );
+
+                  if (sharedGP) {
+                    const tmDriverId = hisSeason.driverId as string;
+
+                    if (!teammatesByYear[seasonYear]) {
+                      teammatesByYear[seasonYear] = [];
+                    }
+
+                    if (!teammatesByYear[seasonYear].some((x) => x.id === tmDriverId)) {
+                      teammatesByYear[seasonYear].push({
+                        id: tmDriverId,
+                        name: teammateMap.get(tmDriverId) || tmDriverId,
+                        constructorId: constructorId,
+                      });
+                    }
+                  }
                 }
-                if (!teammatesByYear[mySeason.year].some((x) => x.id === tm._id)) {
-                  teammatesByYear[mySeason.year].push({
-                    id: tm._id,
-                    // 👈 CAMBIO AQUÍ: Prioriza tm.name sobre tm.fullName
-                    name: (tm.name as string) || (tm.fullName as string) || tm._id,
-                    constructorId: mySeason.constructorId!,
-                  });
-                }
-              }
+              });
             });
-          });
+          }
         }
       }
 
@@ -149,7 +193,7 @@ export const getDriverProfile = (driverId: string) =>
         teammatesByYear,
       };
     },
-    [`driver-profile-${driverId}-v12`], // 👈 CAMBIO AQUÍ: v11 -> v12 para invalidar el cache en Next.js
+    [`driver-profile-${driverId}-v13`], // Incrementado a v13 para refrescar el caché
     { revalidate: 3600 }
   )();
 
