@@ -12,6 +12,7 @@ interface DriverProfileIndex {
   fullName?: string;
   permanentNumber?: number;
   countryId?: string;
+  imageUrl?: string;
   alpha2Code?: string;
   stats?: {
     wins?: number;
@@ -186,6 +187,7 @@ export default async function DriversPage({ searchParams }: PageProps) {
                   fastestLaps={driver.stats?.fastestLaps}
                   poles={driver.stats?.poles}
                   permanentNumber={driver.permanentNumber}
+                  imageUrl={driver.imageUrl}
                 />
               </Link>
             );

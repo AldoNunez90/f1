@@ -45,6 +45,9 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.f1technical.net',
         pathname: '/**',
+      },{
+        protocol: 'https',
+        hostname: 'res.cloudinary.com', 
       }
     ],
   },

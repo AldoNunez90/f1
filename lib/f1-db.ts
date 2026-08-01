@@ -273,6 +273,7 @@ export const getAllDriversIndex = (mode: DriverViewMode = "active") =>
               permanentNumber: 1,
               driverNumber: 1,
               role: 1,
+              imageUrl: 1,
             },
           },
         ])
