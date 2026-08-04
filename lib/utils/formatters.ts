@@ -128,30 +128,83 @@ export function extractTeamFromDriver(data: unknown): string | undefined {
  * Acepta Alpha-2 (ej: "AR", "HK") devuelto por la colección countries de MongoDB,
  * o Alpha-3 / fallback como respaldo.
  */
+/**
+ * Genera la URL de la bandera desde FlagCDN a partir del código, ID o slug de país.
+ * Soporta Alpha-2 (ej: "AR"), Alpha-3 (ej: "USA", "POR"), slugs de la DB (ej: "united-states", "portugal") 
+ * y nombres comunes.
+ */
 export function getCountryFlag(countryCode: string | undefined | null): string {
   if (!countryCode || typeof countryCode !== 'string') return '🌐';
 
-  let code = countryCode.trim().toUpperCase();
+  const raw = countryCode.trim().toLowerCase();
 
-  // Fallback si recibe un código Alpha-3 legacy
-  const alpha3ToAlpha2: Record<string, string> = {
-    'BRN': 'BH', 'KSA': 'SA', 'AUS': 'AU', 'JPN': 'JP', 'CHN': 'CN',
-    'USA': 'US', 'MON': 'MC', 'CAN': 'CA', 'ESP': 'ES', 'AUT': 'AT',
-    'GBR': 'GB', 'HUN': 'HU', 'BEL': 'BE', 'NED': 'NL', 'ITA': 'IT',
-    'AZE': 'AZ', 'SGP': 'SG', 'MEX': 'MX', 'BRA': 'BR', 'QAT': 'QA',
-    'UAE': 'AE', 'FRA': 'FR', 'PRT': 'PT', 'TUR': 'TR', 'MCO': 'MC',
-    'ZAF': 'ZA', 'KOR': 'KR', 'RUS': 'RU', 'DEU': 'DE', 'CHE': 'CH',
-    'ARG': 'AR', 'COL': 'CO', 'CHL': 'CL', 'PER': 'PE', 'URY': 'UY',
-    'VEN': 'VE', 'ECU': 'EC', 'BOL': 'BO', 'PRY': 'PY', 'CUB': 'CU',
+  // 1. Mapeo de Slugs/IDs de MongoDB, nombres en inglés/español y códigos de 3 letras (IOC/ISO) -> Alpha-2
+  const countryToAlpha2: Record<string, string> = {
+    // --- Casos problemáticos reportados ---
+    'united-states': 'us',
+    'usa': 'us',
+    'united states': 'us',
+    'united-states-of-america': 'us',
+    'us': 'us',
+    'portugal': 'pt',
+    'prt': 'pt',
+    'por': 'pt',
+    'pt': 'pt',
+    'venezuela': 've',
+    'ven': 've',
+    've': 've',
+
+    // --- Slugs e IDs comunes de la DB / Países de F1 ---
+    'argentina': 'ar', 'arg': 'ar',
+    'australia': 'au', 'aus': 'au',
+    'austria': 'at', 'aut': 'at',
+    'azerbaijan': 'az', 'aze': 'az',
+    'bahrain': 'bh', 'brn': 'bh',
+    'belgium': 'be', 'bel': 'be',
+    'brazil': 'br', 'bra': 'br',
+    'canada': 'ca', 'can': 'ca',
+    'chile': 'cl', 'chl': 'cl',
+    'china': 'cn', 'chn': 'cn',
+    'czechia': 'cz', 'cze': 'cz', 'czech-republic': 'cz',
+    'colombia': 'co', 'col': 'co',
+    'cuba': 'cu', 'cub': 'cu',
+    'denmark': 'dk', 'dnk': 'dk', 'den': 'dk',
+    'finland': 'fi', 'fin': 'fi',
+    'france': 'fr', 'fra': 'fr',
+    'germany': 'de', 'deu': 'de', 'ger': 'de',
+    'great-britain': 'gb', 'united-kingdom': 'gb', 'gbr': 'gb', 'uk': 'gb',
+    'hungary': 'hu', 'hun': 'hu',
+    'india': 'in', 'ind': 'in',
+    'indonesia': 'id', 'idn': 'id',
+    'ireland': 'ie', 'irl': 'ie',
+    'italy': 'it', 'ita': 'it',
+    'japan': 'jp', 'jpn': 'jp',
+    'mexico': 'mx', 'mex': 'mx',
+    'monaco': 'mc', 'mco': 'mc', 'mon': 'mc',
+    'netherlands': 'nl', 'ned': 'nl', 'nld': 'nl',
+    'new-zealand': 'nz', 'nzl': 'nz',
+    'poland': 'pl', 'pol': 'pl',
+    'qatar': 'qa', 'qat': 'qa',
+    'russia': 'ru', 'rus': 'ru',
+    'saudi-arabia': 'sa', 'ksa': 'sa', 'sau': 'sa',
+    'singapore': 'sg', 'sgp': 'sg',
+    'south-africa': 'za', 'zaf': 'za', 'rsa': 'za',
+    'spain': 'es', 'esp': 'es',
+    'sweden': 'se', 'swe': 'se',
+    'switzerland': 'ch', 'che': 'ch', 'sui': 'ch',
+    'thailand': 'th', 'tha': 'th',
+    'turkey': 'tr', 'tur': 'tr',
+    'united-arab-emirates': 'ae', 'uae': 'ae', 'are': 'ae',
+    'uruguay': 'uy', 'ury': 'uy',
+    'zimbabwe': 'zw', 'zwe': 'zw',
   };
 
-  if (code.length === 3) {
-    code = alpha3ToAlpha2[code] || code;
-  }
+  // Buscar en el diccionario
+  const alpha2 = countryToAlpha2[raw] || (raw.length === 2 ? raw : null);
 
-  if (code.length !== 2) return '🌐';
+  if (!alpha2) return '🌐';
 
-  return `https://flagcdn.com/64x48/${code.toLowerCase()}.png`;
+  return `https://flagcdn.com/64x48/${alpha2.toLowerCase()}.png`;
 }
 
 export function formatNumber(num: number | undefined, decimals = 2): string {

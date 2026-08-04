@@ -678,6 +678,7 @@ export async function getTeamByIdOrSlug(idOrSlug: string) {
         entrantName,
         isCustomerEntry,
         chassisName,
+        engineId: engineRel?.engineId || s.engineManufacturerId || null,
         engineName,
         drivers: teamDrivers,
         positionNumber: standing?.positionNumber ?? standing?.positionDisplayOrder ?? null,
@@ -699,5 +700,36 @@ export async function getTeamByIdOrSlug(idOrSlug: string) {
     },
     seasonHistory,
     uniqueYearsCount,
+  };
+}
+
+
+export async function getEngineByIdOrSlug(idOrSlug: string) {
+  const db = await getValidatedDb();
+
+  const engine = await db.collection<CustomDocument>('engines').findOne({
+    $or: [
+      { id: idOrSlug },
+      { engineId: idOrSlug },
+      { _id: idOrSlug as unknown as string },
+      {
+        $expr: {
+          $eq: [{ $toString: '$_id' }, idOrSlug],
+        },
+      },
+    ],
+  });
+
+  if (!engine) return null;
+
+  return {
+    _id: engine._id.toString(),
+    id: engine.id as string,
+    engineManufacturerId: engine.engineManufacturerId as string,
+    name: engine.name as string,
+    fullName: engine.fullName as string,
+    capacity: engine.capacity as number | null,
+    configuration: engine.configuration as string | null,
+    aspiration: engine.aspiration as string | null,
   };
 }

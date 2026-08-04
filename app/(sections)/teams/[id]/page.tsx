@@ -1,7 +1,8 @@
-import { getTeamByIdOrSlug } from '@/lib/f1-db';
-import { BackButton } from '@/app/components/common/BackButton';
-import { notFound } from 'next/navigation';
-import Link from 'next/link';
+import { getTeamByIdOrSlug } from "@/lib/f1-db";
+import { BackButton } from "@/app/components/common/BackButton";
+import { EngineTrigger } from "@/app/components/engines/EngineTrigger";
+import { notFound } from "next/navigation";
+import Link from "next/link";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -39,6 +40,7 @@ export interface SeasonConstructorRecord {
   entrantName?: string;
   isCustomerEntry?: boolean;
   chassisName?: string;
+  engineId?: string;
   engineName?: string;
   drivers?: DriverLink[];
   positionNumber?: number | null;
@@ -115,26 +117,40 @@ export default async function TeamDetailPage({ params }: PageProps) {
         {/* Métricas Secundarias */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700/60 text-xs">
           <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
-            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">GPs Disputados</span>
-            <span className="font-bold text-gray-900 dark:text-white text-sm">{team.totalRaceStarts ?? team.totalRaceEntries ?? 0}</span>
-          </div>
-
-          <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
-            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">Pole Positions</span>
-            <span className="font-bold text-gray-900 dark:text-white text-sm">{team.totalPolePositions ?? 0}</span>
-          </div>
-
-          <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
-            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">Mejor Carrera</span>
+            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">
+              GPs Disputados
+            </span>
             <span className="font-bold text-gray-900 dark:text-white text-sm">
-              {team.bestRaceResult ? `${team.bestRaceResult}º Puesto` : 'N/D'}
+              {team.totalRaceStarts ?? team.totalRaceEntries ?? 0}
             </span>
           </div>
 
           <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
-            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">Mejor Posición</span>
+            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">
+              Pole Positions
+            </span>
             <span className="font-bold text-gray-900 dark:text-white text-sm">
-              {team.bestChampionshipPosition ? `${team.bestChampionshipPosition}º Lugar` : 'N/D'}
+              {team.totalPolePositions ?? 0}
+            </span>
+          </div>
+
+          <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">
+              Mejor Carrera
+            </span>
+            <span className="font-bold text-gray-900 dark:text-white text-sm">
+              {team.bestRaceResult ? `${team.bestRaceResult}º Puesto` : "N/D"}
+            </span>
+          </div>
+
+          <div className="p-2.5 bg-gray-50 dark:bg-gray-700/40 rounded-lg">
+            <span className="block text-gray-400 font-extrabold uppercase text-[10px]">
+              Mejor Posición
+            </span>
+            <span className="font-bold text-gray-900 dark:text-white text-sm">
+              {team.bestChampionshipPosition
+                ? `${team.bestChampionshipPosition}º Lugar`
+                : "N/D"}
             </span>
           </div>
         </div>
@@ -148,11 +164,13 @@ export default async function TeamDetailPage({ params }: PageProps) {
               Histórico de Participación
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Chasis, motorización, alineaciones y clasificaciones oficiales por motor
+              Chasis, motorización, alineaciones y clasificaciones oficiales por
+              motor
             </p>
           </div>
           <span className="text-xs font-bold text-gray-400">
-            {uniqueYearsCount} {uniqueYearsCount === 1 ? 'Temporada' : 'Temporadas'}
+            {uniqueYearsCount}{" "}
+            {uniqueYearsCount === 1 ? "Temporada" : "Temporadas"}
           </span>
         </div>
 
@@ -161,6 +179,7 @@ export default async function TeamDetailPage({ params }: PageProps) {
             <thead className="bg-gray-50 dark:bg-gray-700/50 text-[11px] uppercase font-bold text-gray-500 dark:text-gray-400">
               <tr>
                 <th className="p-3">Año</th>
+                <th className="p-3">Equipo</th>
                 <th className="p-3">Chasis</th>
                 <th className="p-3">Motor</th>
                 <th className="p-3">Pilotos Titulares</th>
@@ -170,7 +189,10 @@ export default async function TeamDetailPage({ params }: PageProps) {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60 font-medium">
               {seasonHistory.map((s) => (
-                <tr key={`${s.year}-${s.engineName}-${s.entrantId || s._id}`} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition">
+                <tr
+                  key={s._id}
+                  className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition"
+                >
                   {/* RENDERIZADO CON ROWSPAN PARA EL AÑO */}
                   {s.isFirstForYear && (
                     <td
@@ -180,22 +202,29 @@ export default async function TeamDetailPage({ params }: PageProps) {
                       <div className="flex items-center gap-1.5 sticky top-2">
                         {s.year}
                         {s.championshipWon && (
-                          <span title="Campeón de Constructores" className="text-xs">🏆</span>
+                          <span
+                            title="Campeón de Constructores"
+                            className="text-xs"
+                          >
+                            🏆
+                          </span>
                         )}
                       </div>
                     </td>
                   )}
 
                   <td className="p-3 font-semibold text-gray-900 dark:text-white">
-                    <div>{s.chassisName || 'N/D'}</div>
-                    {s.isCustomerEntry && s.entrantName && (
-                      <span className="inline-block mt-1 text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-800">
-                        Equipo Privado: {s.entrantName}
-                      </span>
-                    )}
+                    {s.entrantName}
+                  </td>
+
+                  <td className="p-3 font-semibold text-gray-900 dark:text-white">
+                    <div>{s.chassisName || "N/D"}</div>
                   </td>
                   <td className="p-3 text-xs uppercase font-bold text-gray-800 dark:text-gray-200">
-                    {s.engineName || 'N/D'}
+                    <EngineTrigger
+                      engineId={s.engineId}
+                      engineName={s.engineName}
+                    />
                   </td>
                   <td className="p-3">
                     {s.drivers && s.drivers.length > 0 ? (
@@ -211,21 +240,24 @@ export default async function TeamDetailPage({ params }: PageProps) {
                         ))}
                       </div>
                     ) : (
-                      <span className="text-xs text-gray-400 italic">Sin registro</span>
+                      <span className="text-xs text-gray-400 italic">
+                        Sin registro
+                      </span>
                     )}
                   </td>
                   <td className="p-3 text-right font-bold text-gray-800 dark:text-gray-200">
-                    {s.points !== null ? s.points : '-'}
+                    {s.points !== null ? s.points : "-"}
                   </td>
                   <td className="p-3 text-center">
                     <span
                       className={`inline-block px-2.5 py-1 text-xs font-bold rounded-lg ${
                         s.championshipWon
-                          ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
+                          ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                       }`}
                     >
-                      {s.positionText || (s.positionNumber ? `${s.positionNumber}º` : 'N/D')}
+                      {s.positionText ||
+                        (s.positionNumber ? `${s.positionNumber}º` : "N/D")}
                     </span>
                   </td>
                 </tr>

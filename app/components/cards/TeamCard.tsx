@@ -114,6 +114,8 @@ const countrySlugToAlpha2: Record<string, string> = {
   belgium: 'BE',
 };
 
+
+
 export function TeamCard({
   _id,
   name,
@@ -140,8 +142,9 @@ export function TeamCard({
     cadillac: 'from-slate-700 to-slate-900',
   };
 
-  const cleanSlug = _id.toLowerCase().replace(/_/g, '-');
+  const cleanSlug = name.toLowerCase().replace(/ /g, '-');
   const gradient = teamGradients[cleanSlug] || 'from-gray-700 to-gray-900';
+
 
   const hexToRgba = (hex: string, alpha: number) => {
     const normalized = hex.replace('#', '');
@@ -167,6 +170,7 @@ export function TeamCard({
     if (!code && driver.countryId) {
       code = countrySlugToAlpha2[driver.countryId.toLowerCase()] || driver.countryId;
     }
+    console.log(code)
     return getCountryFlag(code || 'GB');
   };
 
@@ -208,7 +212,7 @@ export function TeamCard({
               </span>
             </div>
             <div className="p-2 bg-gray-50 dark:bg-gray-700/40 rounded-lg border border-gray-100 dark:border-gray-700">
-              <span className="block text-[10px] font-extrabold text-gray-400 uppercase">Motorización</span>
+              <span className="block text-[10px] font-extrabold text-gray-400 uppercase">Motor</span>
               <span className="font-bold text-gray-800 dark:text-gray-200 truncate block">
                 {engineName || 'N/D'}
               </span>
@@ -218,7 +222,7 @@ export function TeamCard({
           {/* Alineación de Pilotos */}
           <div>
             <h3 className="text-[11px] font-extrabold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-              Pilotos Asignados
+              Pilotos 
             </h3>
             <div className="space-y-2">
               {drivers.length > 0 ? (
