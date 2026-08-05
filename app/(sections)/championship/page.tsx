@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useF1Data } from '@/lib/hooks/useF1Data';
-import { LoadingGrid } from '@/app/components/common/Loading';
+import { LoadingTab } from '@/app/components/common/Loading';
 import { ErrorMessage } from '@/app/components/common/Error';
 
 
@@ -48,15 +48,14 @@ export default function ChampionshipPage() {
   const { data: championshipDriversData, loading: championshipDriversLoading, error: championshipDriversError, refetch: refetchDriversChampionship } = useF1Data<ChampionshipEntry[]>(championshipDriversConfig);
   const { data: driversData, loading: driversLoading, error: driversError } = useF1Data<Driver[]>(driversConfig);
 
-  // OPTIMIZACIÓN RENDIMIENTO Y PROCESOS DE REACT:
-  // Controlamos de forma segura el scroll al tope solo cuando finaliza con éxito la carga de las APIs de campeonato.
+
   useEffect(() => {
     if (!teamLoading && !championshipDriversLoading && !driversLoading && !teamError && !championshipDriversError && !driversError) {
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
     }
   }, [teamLoading, championshipDriversLoading, driversLoading, teamError, championshipDriversError, driversError]);
 
-  if (teamLoading || championshipDriversLoading || driversLoading) return <LoadingGrid />;
+  if (teamLoading || championshipDriversLoading || driversLoading) return <LoadingTab />;
   if (teamError) return <ErrorMessage message={teamError.message} onRetry={refetchTeams} />;
   if (championshipDriversError) return <ErrorMessage message={championshipDriversError.message} onRetry={refetchDriversChampionship} />;
   if (driversError) return <ErrorMessage message={driversError.message} />;

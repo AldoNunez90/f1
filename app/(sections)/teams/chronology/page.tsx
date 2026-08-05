@@ -1,11 +1,10 @@
 import { getAllChronologiesGrouped } from '@/lib/db/chronology';
-import { ChronologyClientView } from './ChronologyClientView';
+import { ChronologyClientView } from '../../../components/teams/ChronologyClientView';
 
 interface PageProps {
   searchParams: Promise<{ parent?: string }>;
 }
 
-export const revalidate = 3600; // Revalida cada hora
 
 export default async function TeamChronologyPage({ searchParams }: PageProps) {
   const { parent } = await searchParams;

@@ -7,11 +7,7 @@ interface CustomDocument {
   [key: string]: unknown;
 }
 
-// Interfaces de apoyo estrictas (sin 'any')
-interface FamilyRelationship {
-  relatedDriverId: string;
-  type: string;
-}
+
 
 export interface TeamDriverLink {
   _id: string;
@@ -45,6 +41,7 @@ export interface DriverLink {
   _id: string;
   fullName: string;
 }
+
 
 export type DriverViewMode = "active" | "rookies" | "all";
 export type TeamViewMode = "active" | "all";
@@ -98,35 +95,58 @@ export const getDriverProfile = (driverId: string) =>
         : null;
       const alpha2Code = (country?.alpha2Code as string) || null;
 
-      // 3. Resolver los nombres de la Familia (priorizando 'name')
-      let familyWithDetails: Array<{ driverId: string; name: string; relationship: string }> = [];
-      const familyRelationships = driver.familyRelationships as FamilyRelationship[] | undefined;
+      // 3. Resolver los nombres de la Familia desde 'drivers_family_relationships'
+let familyWithDetails: Array<{ driverId: string; name: string; relationship: string }> = [];
 
-      if (Array.isArray(familyRelationships) && familyRelationships.length > 0) {
-        const familyIds = familyRelationships.map((f: FamilyRelationship) => f.relatedDriverId);
+// Buscamos si el piloto actual figura como padre/origen O como hijo/destino
+const familyDocs = await db
+  .collection<CustomDocument>("drivers_family_relationships")
+  .find({
+     parentDriverId: driverId 
+  })
+  .sort({ positionDisplayOrder: 1 })
+  .toArray();
 
-        const relativeDocs = await db
-          .collection<CustomDocument>("drivers_profile")
-          .find(
-            { _id: { $in: familyIds as unknown as string[] } },
-            { projection: { _id: 1, name: 1, fullName: 1 } }
-          )
-          .toArray();
+  
 
-        const relativeMap = new Map(
-          relativeDocs.map((d: CustomDocument) => [
-            d._id,
-            (d.name as string) || (d.fullName as string) || d._id,
-          ])
-        );
+if (familyDocs.length > 0) {
+  // Identificamos los IDs de los familiares involucrados
+  const relatedDriverIds = Array.from(
+    new Set(
+      familyDocs.map((doc) => {
+        const isParent = doc.parentDriverId === driverId;
+        return isParent
+          ? (doc.driverId as string)
+          : (doc.parentDriverId as string);
+      })
+    )
+  );
+  const relatedDriverDocs = await db
+  .collection<CustomDocument>("drivers_profile")
+    .find(
+      { _id: { $in: relatedDriverIds as unknown as string[] } },
+      { projection: { _id: 1, name: 1, fullName: 1 } }
+    )
+    .toArray();
 
-        familyWithDetails = familyRelationships.map((f: FamilyRelationship) => ({
-          driverId: f.relatedDriverId,
-          name: relativeMap.get(f.relatedDriverId) || f.relatedDriverId,
-          relationship: f.type,
-        }));
-      }
+  const relatedDriverNameMap = new Map(
+    relatedDriverDocs.map((d) => [
+      d._id as string,
+      (d.name as string) || (d.fullName as string) || (d._id as string),
+    ])
+  );
 
+  familyWithDetails = familyDocs.map((doc) => {
+    const isParent = doc.parentDriverId === driverId;
+    const relatedDriverId = isParent ? (doc.driverId as string) : (doc.parentDriverId as string);
+    
+    return {
+      driverId: relatedDriverId,
+      name: relatedDriverNameMap.get(relatedDriverId) || relatedDriverId,
+      relationship: doc.type as string,
+    };
+  });
+}
       // 4. Calcular compañeros de equipo exactos mediante intersección de GPs (seasons_entrance_drivers)
       const teammatesByYear: Record<number, Array<{ id: string; name: string; constructorId: string }>> = {};
 
@@ -733,3 +753,5 @@ export async function getEngineByIdOrSlug(idOrSlug: string) {
     aspiration: engine.aspiration as string | null,
   };
 }
+
+

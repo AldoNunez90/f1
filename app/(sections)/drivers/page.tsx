@@ -78,6 +78,7 @@ export default async function DriversPage({ searchParams }: PageProps) {
   { id: 'all', label: 'Histórico' },
 ];
 
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-5">

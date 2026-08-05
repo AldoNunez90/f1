@@ -82,20 +82,25 @@ export default async function DriverDetailPage({ params }: PageProps) {
   const flagUrl = getCountryFlag(driver.alpha2Code || driver.countryId);
   const stats = driver.stats || {};
 
-  // Diccionario ampliado de parentescos
+  // Diccionario de relaciones que cubre las claves en mayúsculas de MongoDB y minúsculas
   const relationshipTranslation: Record<string, string> = {
-    father: "Padre",
-    son: "Hijo",
-    brother: "Hermano",
-    "half-brother": "Medio hermano",
-    uncle: "Tío",
-    nephew: "Sobrino",
-    grandfather: "Abuelo",
-    grandson: "Nieto",
-    cousin: "Primo",
-    "brother-in-law": "Cuñado",
-    "father-in-law": "Suegro",
-  };
+  CHILD: "Hijo",
+  CHILD_IN_LAW: "Yerno",
+  GRANDCHILD: "Nieto",
+  GRANDPARENT: "Abuelo",
+  GRANDPARENTS_SIBLING: "Tío abuelo",
+  HALF_SIBLING: "Medio hermano",
+  PARENT: "Padre",
+  PARENTS_SIBLING: "Tío",
+  PARENTS_SIBLINGS_CHILD: "Primo",
+  PARENT_IN_LAW: "Suegro",
+  SIBLING: "Hermano",
+  SIBLINGS_CHILD: "Sobrino",
+  SIBLINGS_CHILD_IN_LAW: "Sobrino político",
+  SIBLINGS_GRANDCHILD: "Sobrino nieto",
+  SIBLING_IN_LAW: "Cuñado",
+};
+
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
@@ -218,22 +223,26 @@ export default async function DriverDetailPage({ params }: PageProps) {
               </h2>
 
               <div className="space-y-2">
-                {driver.familyWithDetails.map((member, idx) => (
-                  <Link
-                    key={idx}
-                    href={`/drivers/${member.driverId}`}
-                    className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 hover:bg-cyan-50 dark:hover:bg-gray-700/50 transition border border-gray-100 dark:border-gray-800"
-                  >
-                    <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {member.name}
-                    </span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300">
-                      {relationshipTranslation[
-                        member.relationship.toLowerCase()
-                      ] || member.relationship}
-                    </span>
-                  </Link>
-                ))}
+                {driver.familyWithDetails.map((member, idx) => {
+                  const relKey = member.relationship.toUpperCase();
+                  const translatedRel =
+                    relationshipTranslation[relKey] || member.relationship;
+
+                  return (
+                    <Link
+                      key={idx}
+                      href={`/drivers/${member.driverId}`}
+                      className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 dark:bg-gray-900/50 hover:bg-cyan-50 dark:hover:bg-gray-700/50 transition border border-gray-100 dark:border-gray-800 group"
+                    >
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition">
+                        {member.name}
+                      </span>
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300 uppercase tracking-wide">
+                        {translatedRel}
+                      </span>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -286,7 +295,7 @@ export default async function DriverDetailPage({ params }: PageProps) {
                 {stats.starts || 0}
               </p>
             </div>
-          
+
             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm text-center">
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase">
                 Vueltas Rápidas
@@ -324,7 +333,6 @@ export default async function DriverDetailPage({ params }: PageProps) {
                     {stats.sprintRaceWins || 0}
                   </p>
                 </div>
-             
               </>
             )}
 
@@ -377,43 +385,43 @@ export default async function DriverDetailPage({ params }: PageProps) {
                         {item.engine || "N/A"}
                       </td>
                       <td className="p-3">
-  {(() => {
-    // 1. Verificamos si en esa temporada el piloto figura como probador/reserva
-    const isTestDriverThisYear = item.testDriver === true;
+                        {(() => {
+                          // 1. Verificamos si en esa temporada el piloto figura como probador/reserva
+                          const isTestDriverThisYear = item.testDriver === true;
 
-    if (isTestDriverThisYear) {
-      return (
-        <span className="text-xs text-amber-500/90 dark:text-amber-400 font-medium italic bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-          Test driver
-        </span>
-      );
-    }
+                          if (isTestDriverThisYear) {
+                            return (
+                              <span className="text-xs text-amber-500/90 dark:text-amber-400 font-medium italic bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                Test driver
+                              </span>
+                            );
+                          }
 
-    // 2. Si no es probador, renderizamos la lista de compañeros normalmente
-    if (teammatesThisYear.length > 0) {
-      return (
-        <div className="flex flex-wrap gap-1.5">
-          {teammatesThisYear.map((tm) => (
-            <Link
-              key={tm.id}
-              href={`/drivers/${tm.id}`}
-              className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-500 text-xs font-semibold text-gray-800 dark:text-gray-200 transition inline-block"
-            >
-              {tm.name}
-            </Link>
-          ))}
-        </div>
-      );
-    }
+                          // 2. Si no es probador, renderizamos la lista de compañeros normalmente
+                          if (teammatesThisYear.length > 0) {
+                            return (
+                              <div className="flex flex-wrap gap-1.5">
+                                {teammatesThisYear.map((tm) => (
+                                  <Link
+                                    key={tm.id}
+                                    href={`/drivers/${tm.id}`}
+                                    className="px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-500 text-xs font-semibold text-gray-800 dark:text-gray-200 transition inline-block"
+                                  >
+                                    {tm.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            );
+                          }
 
-    // 3. Si era titular pero verdaderamente no hay registro de compañero
-    return (
-      <span className="text-xs text-gray-400 italic">
-        Sin registros de compañero
-      </span>
-    );
-  })()}
-</td>
+                          // 3. Si era titular pero verdaderamente no hay registro de compañero
+                          return (
+                            <span className="text-xs text-gray-400 italic">
+                              Sin registros de compañero
+                            </span>
+                          );
+                        })()}
+                      </td>
                     </tr>
                   );
                 })}
