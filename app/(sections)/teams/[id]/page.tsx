@@ -1,6 +1,7 @@
-import { getTeamByIdOrSlug } from "@/lib/f1-db";
+import { getTeamByIdOrSlug } from "@/lib/db/f1-db";
 import { BackButton } from "@/app/components/common/BackButton";
 import { EngineTrigger } from "@/app/components/engines/EngineTrigger";
+import { ConstructorChronologyBanner } from "@/app/components/asssets/ConstructorChronologyBanner";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -266,6 +267,11 @@ export default async function TeamDetailPage({ params }: PageProps) {
           </table>
         </div>
       </div>
+
+<ConstructorChronologyBanner 
+  parentConstructorId={team.id || id} 
+  teamName={team.name || team.fullName} 
+/>
     </div>
   );
 }

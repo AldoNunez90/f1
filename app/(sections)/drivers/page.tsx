@@ -1,4 +1,4 @@
-import { getAllDriversIndex, DriverViewMode } from '@/lib/f1-db';
+import { getAllDriversIndex, DriverViewMode } from '@/lib/db/f1-db';
 import { OrderSelector } from '@/app/components/common/OrderSelector';
 import { CountrySelector } from '@/app/components/common/CountrySelector';
 import { DriversGrid, DriverProfileIndex } from '@/app/components/drivers/DriversGrid';

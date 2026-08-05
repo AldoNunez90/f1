@@ -1,4 +1,4 @@
-import { getDriverProfile } from "@/lib/f1-db";
+import { getDriverProfile } from "@/lib/db/f1-db";
 import { getCountryFlag, formatDate } from "@/lib/utils/formatters";
 import Image from "next/image";
 import Link from "next/link";

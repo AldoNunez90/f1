@@ -170,7 +170,6 @@ export function TeamCard({
     if (!code && driver.countryId) {
       code = countrySlugToAlpha2[driver.countryId.toLowerCase()] || driver.countryId;
     }
-    console.log(code)
     return getCountryFlag(code || 'GB');
   };
 

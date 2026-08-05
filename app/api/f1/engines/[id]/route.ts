@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEngineByIdOrSlug } from '@/lib/f1-db';
+import { getEngineByIdOrSlug } from '@/lib/db/f1-db';
 
 export async function GET(
   request: NextRequest,

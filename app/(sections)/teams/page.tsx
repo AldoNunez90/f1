@@ -1,4 +1,4 @@
-import { getTeamsIndex, TeamViewMode, TeamProfileIndex } from '@/lib/f1-db';
+import { getTeamsIndex, TeamViewMode, TeamProfileIndex } from '@/lib/db/f1-db';
 import { TeamsGrid } from '@/app/components/teams/TeamsGrid';
 import { ViewTabs } from '@/app/components/common/ViewTabs';
 

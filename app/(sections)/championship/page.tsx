@@ -5,6 +5,8 @@ import { useF1Data } from '@/lib/hooks/useF1Data';
 import { LoadingGrid } from '@/app/components/common/Loading';
 import { ErrorMessage } from '@/app/components/common/Error';
 
+
+
 interface ChampionshipEntry {
   meeting_key: number;
   points_current: number;

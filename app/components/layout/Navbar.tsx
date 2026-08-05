@@ -16,6 +16,7 @@ export function Navbar() {
     { href: "/novedades", label: "Novedades"},
     { href: "/drivers", label: "Pilotos"},
     { href: "/teams", label: "Equipos"},
+    {href: "/teams/chronology", label: "Cronología"},
     { href: "/championship", label: "Campeonatos"},
     { href: "/sessions", label: "Sesiones"}
   ];

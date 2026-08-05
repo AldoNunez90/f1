@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
-import { TeamProfileIndex } from '@/lib/f1-db';
+import { TeamProfileIndex } from '@/lib/db/f1-db';
 import { TeamCard } from '@/app/components/cards/TeamCard';
 import { EmptyState } from '@/app/components/common/Error';
 import { GridLoadingOverlay } from '@/app/components/common/GridLoadingOverlay';

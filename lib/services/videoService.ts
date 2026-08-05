@@ -16,12 +16,25 @@ export interface VideoItem {
   thumbnail?: string;
 }
 
+// Interfaz para el objeto parseado desde el XML de YouTube RSS (Atom Feed)
+interface YouTubeXmlEntry {
+  title?: string | { '#text'?: string };
+  link?: { href?: string; '#text'?: string };
+  published?: string;
+  summary?: string | { '#text'?: string };
+  'media:group'?: {
+    'media:player'?: { url?: string };
+    'media:thumbnail'?: { url?: string; '#text'?: string };
+    'media:description'?: { '#text'?: string };
+  };
+}
+
 export const videoChannels: VideoChannel[] = [
-    {
-      id: 'aloquevinimos',
-      name: 'A lo que vinimos',
-      rssUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC3AO_a1en2eP7Tz405e9Daw',
-    },
+  {
+    id: 'aloquevinimos',
+    name: 'A lo que vinimos',
+    rssUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC3AO_a1en2eP7Tz405e9Daw',
+  },
   {
     id: 'florAndersen',
     name: 'Flor Andersen',
@@ -33,9 +46,9 @@ export const videoChannels: VideoChannel[] = [
     rssUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCklUGqDiqiIak4PWh-qbhxQ',
   },
   {
-    id: 'slicerF1',
-    name: 'Slicer F1',
-    rssUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC-SbQFXrNl6n76_GO9IwrCg',
+    id: 'HPRacing',
+    name: 'High Performance Racing',
+    rssUrl: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCbh40bdfTs9VFOECB47DdOw',
   },
   {
     id: 'davidPerogil',
@@ -62,10 +75,10 @@ export function parseYouTubeRss(xmlText: string, channel: VideoChannel): VideoIt
   const json = parser.parse(xmlText);
   const entries = json?.feed?.entry ?? [];
 
-  const items = Array.isArray(entries) ? entries : [entries];
+  const items: YouTubeXmlEntry[] = Array.isArray(entries) ? entries : [entries];
 
   // Exclude YouTube Shorts: their feed links typically include '/shorts/'
-  const filtered = items.filter((entry: any) => {
+  const filtered = items.filter((entry: YouTubeXmlEntry) => {
     const link =
       entry.link?.href ||
       entry.link?.['#text'] ||
@@ -76,7 +89,7 @@ export function parseYouTubeRss(xmlText: string, channel: VideoChannel): VideoIt
   });
 
   return filtered
-    .map((entry: any) => {
+    .map((entry: YouTubeXmlEntry) => {
       const link =
         entry.link?.href ||
         entry.link?.['#text'] ||
@@ -90,14 +103,16 @@ export function parseYouTubeRss(xmlText: string, channel: VideoChannel): VideoIt
 
       const description =
         entry['media:group']?.['media:description']?.['#text'] ||
-        entry.summary?.['#text'] ||
-        entry.summary ||
+        (typeof entry.summary === 'object' ? entry.summary['#text'] : entry.summary) ||
         undefined;
+
+      const titleText =
+        typeof entry.title === 'object' ? entry.title['#text'] : entry.title;
 
       return {
         channelId: channel.id,
         channelName: channel.name,
-        title: entry.title?.['#text'] ?? entry.title ?? 'Video sin título',
+        title: titleText ?? 'Video sin título',
         link,
         published: entry.published,
         description,
@@ -136,7 +151,7 @@ export async function fetchLatestVideoForChannel(
 export async function fetchLatestVideos(): Promise<VideoItem[]> {
   const items = await Promise.all(
     videoChannels.map(async (channel) => {
-        const video = await fetchLatestVideoForChannel(channel);
+      const video = await fetchLatestVideoForChannel(channel);
       return (
         video ?? {
           channelId: channel.id,
