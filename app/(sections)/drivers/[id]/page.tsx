@@ -219,7 +219,7 @@ export default async function DriverDetailPage({ params }: PageProps) {
           {driver.familyWithDetails && driver.familyWithDetails.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm space-y-3">
               <h2 className="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">
-                Familiares en F1
+                {driver.familyWithDetails.length === 1 ? "Familiar en F1" : "Familiares en F1"}
               </h2>
 
               <div className="space-y-2">

@@ -14,7 +14,8 @@ import {
   formatArgentinaDateTime,
 } from "@/lib/utils/formatters";
 import { Countdown } from "@/app/components/cards/Countdown";
-
+import { CircuitAnimation } from "./components/circuits/CircuitAnimation";
+import { CIRCUIT_PATHS } from "@/lib/data/circuitsPaths";
 
 
 interface Session {
@@ -158,6 +159,34 @@ export default function Home() {
     },
   ];
 
+  // 2. Obtener el trazado SVG correspondiente según los datos del circuito de OpenF1
+  const circuitPathData = useMemo(() => {
+    if (!nextSession) return null;
+
+    // Normalización de claves (convierte "Spa-Francorchamps" o "Spa" a slug limpio)
+    const slugCandidates = [
+      nextSession.circuit_short_name,
+      nextSession.circuit_name,
+      nextSession.location,
+    ]
+      .filter(Boolean)
+      .map((name) =>
+        name!
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+      );
+
+    for (const slug of slugCandidates) {
+      if (CIRCUIT_PATHS[slug]) {
+        return CIRCUIT_PATHS[slug];
+      }
+    }
+    
+    console.log(slugCandidates)
+    return null;
+  }, [nextSession]);
   return (
     <div className="space-y-12">
       <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end  items-center hidden md:block">
@@ -226,6 +255,18 @@ export default function Home() {
                   Ir a la sesión →
                 </p>
               </Link>
+
+              {/* Columna Derecha: Trazado animado del circuito (si está disponible) */}
+            {circuitPathData && (
+              <div className="h-44 w-full flex items-center justify-center p-2 bg-slate-950/60 dark:bg-slate-950/80 rounded-xl border border-slate-800/50">
+                <CircuitAnimation
+                  pathD={circuitPathData.pathD}
+                  viewBox={circuitPathData.viewBox}
+                  circuitName={nextSession.circuit_name || "Circuito"}
+                  duration="8s"
+                />
+              </div>
+            )}
 
               <div className="rounded-2xl bg-green-500/10 dark:bg-green-500/20 p-4 border border-green-500/10">
                 <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
@@ -527,6 +568,8 @@ export default function Home() {
             </div>
           </div>
         </div>
+
+
       </section>
     </div>
   );
