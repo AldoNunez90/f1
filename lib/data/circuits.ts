@@ -225,4 +225,15 @@ race_distance: 306.183,
 circuit_code: 22,
 country_code: "AE",
 },
+{
+circuit_name: "Circuito Internacional de Sepang",
+circuit_short_name: "Circuito Internacional de Sepang",
+circuit_length: 5.543,
+first_grand_prix: 1999,
+number_of_laps: 56,
+fastest_lap_time: "1:34.080 Sebastian Vettel (2017)",
+race_distance: 310.408,
+circuit_code: 23,
+country_code: "MY",
+}
 ]

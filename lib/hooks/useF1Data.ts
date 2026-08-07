@@ -25,6 +25,7 @@ export function useF1Data<T = unknown>(options: UseF1DataOptions): UseF1DataRetu
 
   const cachedData = getCache(cacheKey) as T | undefined;
 
+
   const [data, setData] = useState<T | null>(cachedData || null);
   const [loading, setLoading] = useState<boolean>(!cachedData);
   const [error, setError] = useState<Error | null>(null);

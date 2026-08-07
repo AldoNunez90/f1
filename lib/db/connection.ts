@@ -18,9 +18,15 @@ interface F1DbCache {
   promise: Promise<mongoose.Connection> | null;
 }
 
+interface TestDbCache {
+  conn: mongoose.Connection | null;
+  promise: Promise<mongoose.Connection> | null;
+}
+
 interface DualMongooseCache {
   defaultCache: DefaultCache;
   f1dbCache: F1DbCache;
+  testDbCache: TestDbCache;
 }
 
 declare global {
@@ -30,6 +36,7 @@ declare global {
 const cached: DualMongooseCache = global.mongooseDualCache || {
   defaultCache: { conn: null, promise: null },
   f1dbCache: { conn: null, promise: null },
+  testDbCache: { conn: null, promise: null },
 };
 
 if (!global.mongooseDualCache) {
@@ -91,6 +98,36 @@ export async function getF1Db(): Promise<mongoose.mongo.Db> {
     return db;
   } catch (e) {
     cached.f1dbCache.promise = null;
+    throw e;
+  }
+}
+
+/**
+ * Conexión dedicada para pruebas / sandbox (`test` DB)
+ */
+export async function getTestDb(): Promise<mongoose.mongo.Db> {
+  if (cached.testDbCache.conn && cached.testDbCache.conn.db) {
+    return cached.testDbCache.conn.db;
+  }
+
+  if (!cached.testDbCache.promise) {
+    const uriToUse = MONGODB_URI!;
+    cached.testDbCache.promise = mongoose
+      .createConnection(uriToUse, {
+        bufferCommands: false,
+        dbName: 'test',
+      })
+      .asPromise();
+  }
+
+  try {
+    const conn = await cached.testDbCache.promise;
+    cached.testDbCache.conn = conn;
+    const db = conn.useDb('test').db;
+    if (!db) throw new Error('No se pudo obtener el objeto Db de test');
+    return db;
+  } catch (e) {
+    cached.testDbCache.promise = null;
     throw e;
   }
 }

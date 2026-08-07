@@ -53,10 +53,10 @@ export function Countdown({ targetDate }: CountdownProps) {
     <div className="flex items-baseline gap-2 font-mono">
       {units.map(({ value, label }) => (
         <div key={label} className="flex items-baseline gap-0.5">
-          <span className="text-2xl  text-gray-900 dark:text-white">
+          <span className="text-2xl  text-gray-100 dark:text-white">
             {String(value).padStart(2, "0")}
           </span>
-          <span className="text-xs font-bold text-gray-700 dark:text-gray-400 uppercase">
+          <span className="text-xs font-bold text-gray-400 dark:text-gray-400 uppercase">
             {label}
           </span>
         </div>

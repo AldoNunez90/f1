@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import Image from "next/image";
+import { useSessionQueue } from "@/lib/hooks/useSessionQueue";
 import { useF1Data } from "@/lib/hooks/useF1Data";
 import { useRssFeed } from "@/lib/hooks/useRssFeed";
 import { useVideoFeed } from "@/lib/hooks/useVideoFeed";
-import Image from "next/image";
 import { VideoCard } from "@/app/components/cards/VideoCard";
-import { useMemo } from "react";
 import {
   formatSessionType,
   formatDateTimeWithOffset,
@@ -15,8 +15,9 @@ import {
 } from "@/lib/utils/formatters";
 import { Countdown } from "@/app/components/cards/Countdown";
 import { CircuitAnimation } from "./components/circuits/CircuitAnimation";
-import { CIRCUIT_PATHS } from "@/lib/data/circuitsPaths";
-
+import { circuitsPaths } from "@/lib/data/circuitsPaths";
+import { circuits } from "@/lib/data/circuits";
+import { getCircuitAnimationDuration } from "@/lib/utils/circuitUtils";
 
 interface Session {
   session_key?: number;
@@ -64,21 +65,25 @@ function sanitizeDescription(description?: string) {
   return description.replace(/<[^>]+>/g, "").trim();
 }
 
+// Función para normalizar nombres a slugs, para búsquedas consistentes.
+const toSlug = (name?: string) =>
+  name?.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
 export default function Home() {
   const { data: drivers, loading: driversLoading } = useF1Data(driversConfig);
   const { data: dataSessions, loading: sessionsLoading } = useF1Data(sessionsConfig);
   const { data: news, loading: newsLoading, error: newsError } = useRssFeed();
-  const {
-    data: videos,
-    loading: videosLoading,
-    error: videosError,
-  } = useVideoFeed();
+  const { data: videos, loading: videosLoading, error: videosError } = useVideoFeed();
   const [now] = useState(() => Date.now());
 
   const sessions: Session[] = useMemo(
-    () => (Array.isArray(dataSessions) ? dataSessions : []),
-    [dataSessions],
+    () => (Array.isArray(dataSessions) ? (dataSessions as Session[]) : []),
+    [dataSessions]
   );
+
+  // Hook tipado limpiamente sin necesidad de cast 'as any'
+  const { sessionQueue, liveSessionKey } = useSessionQueue(sessions, now);
+
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
   const raceCount = 2;
   const sessionCount = sessions.length;
@@ -89,36 +94,50 @@ export default function Home() {
         .sort(
           (a, b) =>
             (Date.parse(b.published || "") || 0) -
-            (Date.parse(a.published || "") || 0),
+            (Date.parse(a.published || "") || 0)
         )
         .slice(0, 3)
     : [];
 
-  // --- LÓGICA DE CÁLCULO DE PRÓXIMA SESIÓN (Sin dependencia de timer) ---
- const nextSession = useMemo(() => {
-    const validSessions = sessions
-      .filter((session) => session.date_start)
-      .sort(
-        (a, b) =>
-          new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime(),
-      );
+  // --- LÓGICA DE RESOLUCIÓN DE LA SESIÓN MOSTRADA ---
+  const nextSession = useMemo(() => {
+    const source =
+      sessionQueue && sessionQueue.length > 0
+        ? sessionQueue
+        : sessions.filter((s) => s.date_start);
 
-    const liveSession = validSessions.find((session) => {
-      const start = new Date(session.date_start!).getTime();
-      const end = session.date_end
-        ? new Date(session.date_end).getTime()
-        : null;
-      return start <= now && (end === null || now <= end);
-    }); 
+    const validSessions = source
+      .slice()
+      .sort((a, b) => new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime());
 
-   return (
+    // Si la queue detecta una sesión en vivo por el marker
+    const liveFromMarker = liveSessionKey
+      ? validSessions.find((s) => s.session_key === liveSessionKey)
+      : undefined;
+
+    const liveSession =
+      liveFromMarker ||
+      validSessions.find((session) => {
+        const start = new Date(session.date_start!).getTime();
+        const end = session.date_end ? new Date(session.date_end).getTime() : null;
+        return start <= now && (end === null || now <= end);
+      });
+
+    return (
       liveSession ||
-      validSessions.find(
-        (session) => new Date(session.date_start!).getTime() > now,
-      ) ||
+      validSessions.find((session) => new Date(session.date_start!).getTime() > now) ||
       validSessions[0]
     );
-  }, [sessions, now]);
+  }, [sessions, sessionQueue, liveSessionKey, now]);
+
+  // Chequeo explícito de estado EN VIVO para styling
+  const isLiveNow = useMemo(() => {
+    if (!nextSession?.date_start) return false;
+    if (liveSessionKey && nextSession.session_key === liveSessionKey) return true;
+    const start = new Date(nextSession.date_start).getTime();
+    const end = nextSession.date_end ? new Date(nextSession.date_end).getTime() : null;
+    return start <= now && (end === null || now <= end);
+  }, [nextSession, liveSessionKey, now]);
 
   const sections = [
     {
@@ -159,37 +178,48 @@ export default function Home() {
     },
   ];
 
-  // 2. Obtener el trazado SVG correspondiente según los datos del circuito de OpenF1
-  const circuitPathData = useMemo(() => {
+  // Obtener trazado SVG y calcular duración según 'circuits.es'
+  const circuitData = useMemo(() => {
     if (!nextSession) return null;
 
-    // Normalización de claves (convierte "Spa-Francorchamps" o "Spa" a slug limpio)
-    const slugCandidates = [
-      nextSession.circuit_short_name,
-      nextSession.circuit_name,
-      nextSession.location,
-    ]
-      .filter(Boolean)
-      .map((name) =>
-        name!
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, "-")
-          .replace(/[^a-z0-9-]/g, "")
-      );
+    // 1. Unificar la búsqueda: encontrar el `circuitInfo` que coincida con la sesión actual.
+    const circuitInfo = circuits.find(
+      (c) =>
+        c.circuit_name === nextSession.circuit_name ||
+        c.circuit_short_name === nextSession.location ||
+        c.circuit_short_name === nextSession.circuit_short_name
+    );
 
-    for (const slug of slugCandidates) {
-      if (CIRCUIT_PATHS[slug]) {
-        return CIRCUIT_PATHS[slug];
-      }
-    }
-    
-    console.log(slugCandidates)
-    return null;
+    // 2. Probar candidatos a slugs para mapear con el dataset local de circuitsPaths
+    const slugCandidates = [
+      toSlug(circuitInfo?.circuit_short_name),
+      toSlug(circuitInfo?.circuit_name),
+      toSlug(nextSession.circuit_short_name),
+      toSlug(nextSession.circuit_name),
+      toSlug(nextSession.location),
+    ].filter((s): s is string => Boolean(s));
+
+    // Ahora comprobamos contra circuitsPaths
+    const matchedSlug = slugCandidates.find((slug) => circuitsPaths[slug]);
+
+    if (!matchedSlug) return null;
+
+    // 3. Calcular la duración dinámicamente
+    const animationDuration = getCircuitAnimationDuration(
+      circuitInfo?.fastest_lap_time,
+      circuitInfo?.circuit_length
+    );
+
+    return {
+      slug: matchedSlug,
+      animationDuration,
+    };
   }, [nextSession]);
+
   return (
     <div className="space-y-12">
-      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end  items-center hidden md:block">
+      {/* Hero Section */}
+      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end items-center hidden md:block">
         <div className="hidden md:block absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
@@ -202,7 +232,6 @@ export default function Home() {
         </div>
 
         <div className="absolute inset-0 bg-linear-to-r from-black/50 via-transparent to-black/20 z-0 pointer-events-none" />
-
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
         <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
 
@@ -220,7 +249,7 @@ export default function Home() {
               Campeonatos →
             </Link>
             <Link
-              href="sessions"
+              href="/sessions"
               className="px-8 py-3 bg-cyan-900/50 border-2 border-white text-white font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition text-center"
             >
               Resultados por sesiones
@@ -229,79 +258,141 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- WIDGET PRÓXIMA SESIÓN --- */}
+      {/* --- WIDGET SESIÓN ACTIVA O PRÓXIMA --- */}
       {!sessionsLoading && nextSession ? (
-        <section className="rounded-3xl bg-gray-100 dark:bg-gray-900 border border-gray-400 dark:border-gray-800 p-6 shadow-sm">
-          <div className="flex flex-col gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-cyan-600 font-bold">
-                Próxima sesión
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-                {formatSessionType(nextSession.session_name)}
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Link
-                href={`/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}`}
-                className="rounded-2xl dark:bg-green-500/30 bg-gray-200 text-center p-4 hover:ring-2 hover:ring-cyan-500 transition-all cursor-pointer block"
-              >
-                <p className="uppercase tracking-[0.2em] font-bold text-gray-800 dark:text-gray-200">
-                  {nextSession.circuit_name ||
-                    nextSession.location ||
-                    "Lugar desconocido"}
-                </p>
-                <p className="text-sm mt-2 text-cyan-900 dark:text-cyan-400 font-semibold">
-                  Ir a la sesión →
-                </p>
-              </Link>
+        <section
+          className={`relative overflow-hidden rounded-3xl border p-6 md:p-8 shadow-2xl text-white transition-colors ${
+            isLiveNow
+              ? "bg-slate-950 border-red-800/80"
+              : "bg-slate-900 border-slate-800"
+          }`}
+        >
+          {/* Ambient Glow dinámico */}
+          <div
+            className={`absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl pointer-events-none ${
+              isLiveNow ? "bg-red-600/15" : "bg-cyan-500/10"
+            }`}
+          />
 
-              {/* Columna Derecha: Trazado animado del circuito (si está disponible) */}
-            {circuitPathData && (
-              <div className="h-44 w-full flex items-center justify-center p-2 bg-slate-950/60 dark:bg-slate-950/80 rounded-xl border border-slate-800/50">
-                <CircuitAnimation
-                  pathD={circuitPathData.pathD}
-                  viewBox={circuitPathData.viewBox}
-                  circuitName={nextSession.circuit_name || "Circuito"}
-                  duration="8s"
-                />
+          <div className="flex flex-col gap-6">
+            {/* Header del Widget */}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        isLiveNow ? "bg-red-400" : "bg-cyan-400"
+                      }`}
+                    ></span>
+                    <span
+                      className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                        isLiveNow ? "bg-red-500" : "bg-cyan-500"
+                      }`}
+                    ></span>
+                  </span>
+                  <p
+                    className={`text-xs uppercase tracking-[0.25em] font-extrabold ${
+                      isLiveNow ? "text-red-400" : "text-cyan-400"
+                    }`}
+                  >
+                    {isLiveNow ? "En Vivo Ahora" : "Próxima Sesión"}
+                  </p>
+                </div>
+                <h2 className="mt-1 text-3xl font-black tracking-tight text-white">
+                  {formatSessionType(nextSession.session_name)}
+                </h2>
               </div>
-            )}
 
-              <div className="rounded-2xl bg-green-500/10 dark:bg-green-500/20 p-4 border border-green-500/10">
-                <p className="text-xs text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em] font-bold">
-                  Cuenta regresiva
-                </p>
-                <div className="mt-2 text-sm font-bold text-gray-950 dark:text-white">
-                  <Countdown targetDate={nextSession.date_start} />
+              <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50">
+                <span className="text-lg">🏎️</span>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
+                    Circuito
+                  </p>
+                  <p className="text-sm font-bold text-slate-200">
+                    {nextSession.circuit_short_name ||
+                      nextSession.circuit_name ||
+                      nextSession.location ||
+                      "Lugar desconocido"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid de Métricas + Animación */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              {/* Información y Horarios */}
+              <div className="lg:col-span-7 flex flex-col gap-4">
+                <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 backdrop-blur-sm">
+                  <p
+                    className={`text-[10px] uppercase tracking-[0.2em] font-extrabold mb-1 ${
+                      isLiveNow ? "text-red-400" : "text-cyan-400"
+                    }`}
+                  >
+                    {isLiveNow ? "Tiempo Transcurrido / Estado" : "Cuenta Regresiva"}
+                  </p>
+                  <div className="text-2xl font-black tracking-tight text-white">
+                    <Countdown targetDate={nextSession.date_start} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-slate-950/40 border border-slate-800/80 p-3.5">
+                    <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-slate-400">
+                      Horario Local
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-slate-200">
+                      {formatDateTimeWithOffset(
+                        nextSession.date_start,
+                        nextSession.gmt_offset
+                      )}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl bg-slate-950/40 border border-slate-800/80 p-3.5">
+                    <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-slate-400">
+                      Hora Argentina
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-slate-200">
+                      {formatArgentinaDateTime(nextSession.date_start)}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-                <p className="text-xs text-black dark:text-gray-400 uppercase tracking-[0.2em]">
-                  Horario local
-                </p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  {formatDateTimeWithOffset(
-                    nextSession.date_start,
-                    nextSession.gmt_offset,
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 dark:bg-gray-800 p-4">
-                <p className="text-xs text-black dark:text-gray-400 uppercase tracking-[0.2em]">
-                  Hora Argentina
-                </p>
-                <p className="mt-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  {formatArgentinaDateTime(nextSession.date_start)}
-                </p>
+              {/* Contenedor del Trazado SVG Real */}
+              <div className="lg:col-span-5 h-48 w-full flex items-center justify-center p-3 bg-slate-950/90 rounded-2xl border border-slate-800 shadow-inner relative overflow-hidden">
+                {circuitData ? (
+                  <CircuitAnimation
+                    slug={circuitData.slug}
+                    circuitName={nextSession.circuit_name || "Circuito"}
+                    duration={circuitData.animationDuration}
+                  />
+                ) : (
+                  <span className="text-xs text-slate-600 font-mono">
+                    Trazado no disponible
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* Enlace de Acción */}
+            <Link
+              href={`/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}`}
+              className={`mt-2 flex items-center justify-center gap-2 w-full py-3 rounded-xl border text-sm font-bold transition-all group ${
+                isLiveNow
+                  ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                  : "bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border-cyan-500/30"
+              }`}
+            >
+              <span>Ver cronograma completo del evento</span>
+              <span className="transition-transform group-hover:translate-x-1">→</span>
+            </Link>
           </div>
         </section>
       ) : sessionsLoading ? (
-        <div className="h-56 bg-white dark:bg-gray-900 rounded-3xl animate-pulse border border-gray-200 dark:border-gray-800 p-6" />
+        <div className="h-64 bg-slate-900/50 rounded-3xl animate-pulse border border-slate-800" />
       ) : null}
 
       {/* Stats Section */}
@@ -340,15 +431,14 @@ export default function Home() {
       </section>
 
       {/* News Section */}
-      <section className="p-5 shadow-xl rounded-3xl bg-yellow-400/20 dark:bg-yellow-400/60 ">
+      <section className="p-5 shadow-xl rounded-3xl bg-yellow-400/20 dark:bg-yellow-400/60">
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
               Novedades
             </h2>
             <p className="text-gray-600 dark:text-gray-100 mt-2">
-              Últimas noticias de Fórmula 1 combinadas desde varios RSS de alto
-              interés.
+              Últimas noticias de Fórmula 1 combinadas desde varios RSS de alto interés.
             </p>
           </div>
           <Link
@@ -382,23 +472,21 @@ export default function Home() {
               >
                 <div className="flex h-full flex-col justify-between gap-6">
                   <div className="relative w-full h-48 overflow-hidden rounded-xl">
-                  <Image
-                    src={item.img || "/landingImgAlfaRomeo.png"}
-                    alt={item.title}
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    fill
-                    className="object-cover rounded-2xl"
+                    <Image
+                      src={item.img || "/landingImgAlfaRomeo.png"}
+                      alt={item.title}
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      fill
+                      className="object-cover rounded-2xl"
                     />
-                    </div>
+                  </div>
                   <div>
                     <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
                       {item.title}
                     </h3>
                     <p className="mt-4 text-sm leading-6 text-slate-600 dark:text-slate-300">
                       {sanitizeDescription(item.description).slice(0, 140)}
-                      {item.description && item.description.length > 140
-                        ? "..."
-                        : ""}
+                      {item.description && item.description.length > 140 ? "..." : ""}
                     </p>
                   </div>
 
@@ -423,8 +511,7 @@ export default function Home() {
               Últimos videos
             </h2>
             <p className="text-gray-600 dark:text-gray-300 mt-2 max-w-2xl">
-              La última publicación de cada uno de los canales configurados en
-              video feed.
+              La última publicación de cada uno de los canales configurados en video feed.
             </p>
           </div>
           <div>
@@ -482,8 +569,7 @@ export default function Home() {
                 Actualización automática
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Datos sincronizados desde que se publican en la web oficial de
-                F1
+                Datos sincronizados desde que se publican en la web oficial de F1
               </p>
             </div>
           </div>
@@ -568,8 +654,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-
       </section>
     </div>
   );

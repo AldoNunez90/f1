@@ -11,7 +11,11 @@ export default async function TeamChronologyPage({ searchParams }: PageProps) {
   const groupedChronologies = await getAllChronologiesGrouped();
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <>
+    <div className='block max-w-56 m-auto text-center md:hidden '>
+      <p>Está sección sólo está disponible en pantallas grandes</p>
+    </div>
+    <main className="hidden md:block max-w-7xl mx-auto px-4 lg:px-8 py-8 space-y-8">
       {/* Hero Section */}
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-extrabold border border-cyan-500/20">
@@ -29,7 +33,8 @@ export default async function TeamChronologyPage({ searchParams }: PageProps) {
       <ChronologyClientView
         groupedChronologies={groupedChronologies}
         initialParent={parent}
-      />
+        />
     </main>
+        </>
   );
 }

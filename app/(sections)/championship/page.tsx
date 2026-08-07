@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useF1Data } from '@/lib/hooks/useF1Data';
 import { LoadingTab } from '@/app/components/common/Loading';
 import { ErrorMessage } from '@/app/components/common/Error';
+import CircuitPathTester from '@/app/components/tester/svgTester';
 
 
 
@@ -160,6 +161,7 @@ export default function ChampionshipPage() {
           </div>
         )}
       </div>
+        <CircuitPathTester />
     </div>
   );
 }

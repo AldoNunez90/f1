@@ -1,6 +1,9 @@
-// @/components/circuits/CircuitAnimation.tsx
+"use client";
+
+import { circuitsPaths } from "@/lib/data/circuitsPaths";
 
 interface CircuitAnimationProps {
+  slug?: string;
   pathD?: string;
   viewBox?: string;
   circuitName?: string;
@@ -8,81 +11,99 @@ interface CircuitAnimationProps {
 }
 
 export function CircuitAnimation({
+  slug,
   pathD,
   viewBox = "0 0 500 500",
   circuitName = "Circuito",
   duration = "8s",
 }: CircuitAnimationProps) {
-  // Validación defensiva: Si no hay trazado o no empieza con comando válido
-  if (!pathD || typeof pathD !== "string" || !pathD.trim().startsWith("M")) {
-    return null;
+  const circuitData = slug ? circuitsPaths[slug] : null;
+
+  if (!circuitData && !pathD) {
+    return (
+      <span className="text-xs text-slate-600 font-mono">
+        Trazado no disponible
+      </span>
+    );
   }
 
+  // Generamos IDs únicos para que no haya conflictos si hay múltiples circuitos renderizados
+  const uniqueSuffix = slug || "custom";
+  const filterId = `glow-${uniqueSuffix}`;
+  const trackId = `track-${uniqueSuffix}`;
+
+  // Verificamos si este circuito tiene la bandera reversed en true
+  // (Asegúrate de que la interfaz de tu circuitData incluya reversed?: boolean)
+  const isReversed = circuitData?.reversed || false;
+
   return (
-    <svg
-      viewBox={viewBox}
-      fill="none"
-      role="img"
-      aria-label={`Trazado de telemetría de ${circuitName}`}
-      className="h-full w-full overflow-visible"
-    >
-      <path
-        d={pathD}
-        stroke="currentColor"
-        strokeWidth="16"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-slate-800 dark:text-slate-900"
-      />
-      <path
-        d={pathD}
-        stroke="currentColor"
-        strokeWidth="6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className="text-cyan-600 dark:text-cyan-400"
-      />
-      <path
-        d={pathD}
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeDasharray="4 20"
-        className="text-slate-950 dark:text-slate-950 motion-reduce:hidden"
-      >
-        <animate
-          attributeName="stroke-dashoffset"
-          from="0"
-          to="-96"
-          dur="2.4s"
-          repeatCount="indefinite"
-        />
-      </path>
-      <circle r="8" className="fill-cyan-500 dark:fill-cyan-300 motion-reduce:hidden">
-        <animateMotion path={pathD} dur={duration} repeatCount="indefinite" />
-      </circle>
-      <circle
-        r="16"
+    <div className="relative h-full w-full flex items-center justify-center">
+      <svg
+        viewBox={viewBox}
         fill="none"
-        stroke="currentColor"
+        role="img"
+        aria-label={`Trazado de telemetría de ${circuitName}`}
+        className="h-full w-full overflow-visible drop-shadow-[0_0_12px_rgba(6,182,212,0.3)] text-cyan-400 stroke-current"
         strokeWidth="2.5"
-        className="text-cyan-500 opacity-40 motion-reduce:hidden dark:text-cyan-300"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       >
-        <animateMotion path={pathD} dur={duration} repeatCount="indefinite" />
-        <animate
-          attributeName="r"
-          values="8;20;8"
-          dur="1.2s"
-          repeatCount="indefinite"
-        />
-        <animate
-          attributeName="opacity"
-          values="0.8;0;0.8"
-          dur="1.2s"
-          repeatCount="indefinite"
-        />
-      </circle>
-    </svg>
+        <defs>
+          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+
+        <g filter={`url(#${filterId})`}>
+          {circuitData ? (
+            <>
+              {/* Trazado principal del circuito CON UN ID para la animación */}
+              <path id={trackId} d={circuitData.track} />
+              
+              {/* Línea de meta */}
+              <path 
+                d={circuitData.finishRect.d} 
+                transform={circuitData.finishRect.transform}
+                fill="currentColor"
+                strokeWidth="1"
+              />
+              
+              {/* Flecha de dirección */}
+              <path 
+                d={circuitData.finishArrow.d} 
+                transform={circuitData.finishArrow.transform}
+                strokeWidth="2"
+              />
+            </>
+          ) : (
+            /* Fallback con ID */
+            <path id={trackId} d={pathD} />
+          )}
+        </g>
+
+        {/* Círculo animado (El monoplaza) */}
+        <circle 
+          r="10" 
+          fill="#ef4444" /* Rojo vibrante */
+          stroke="#ffffff" /* Borde blanco para resaltar */
+          strokeWidth="1.5"
+          className="drop-shadow-[0_0_8px_rgba(239,68,68,1)]"
+        >
+          <animateMotion 
+            dur={duration} 
+            repeatCount="indefinite"
+            // Si está en reversa, le decimos que vaya del final (1) al inicio (0)
+            // calcMode="linear" asegura que la velocidad sea constante durante todo el trazado.
+            {...(isReversed 
+              ? { keyPoints: "1;0", keyTimes: "0;1", calcMode: "linear" } 
+              : {})}
+          >
+            {/* Vinculamos el movimiento al ID del trazado de la pista */}
+            <mpath href={`#${trackId}`} />
+          </animateMotion>
+        </circle>
+      </svg>
+    </div>
   );
 }

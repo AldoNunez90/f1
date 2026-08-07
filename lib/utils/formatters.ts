@@ -179,6 +179,7 @@ export function getCountryFlag(countryCode: string | undefined | null): string {
     'ireland': 'ie', 'irl': 'ie',
     'italy': 'it', 'ita': 'it',
     'japan': 'jp', 'jpn': 'jp',
+    'malaysia': 'my', 'mys': 'my',
     'mexico': 'mx', 'mex': 'mx',
     'monaco': 'mc', 'mco': 'mc', 'mon': 'mc',
     'netherlands': 'nl', 'ned': 'nl', 'nld': 'nl',

@@ -1,4 +1,4 @@
-import { initF1CronJobs } from '@/lib/cron/syncF1Data';
+// Cron jobs disabled: import removed to avoid automatic short-interval syncs
 
 let cronJobsInitialized = false;
 
@@ -12,8 +12,11 @@ export function initializeAppServices() {
   }
 
   try {
-    // Inicializar cron jobs para sincronización automática
-    initF1CronJobs();
+    // Inicializar programador de sesiones en el servidor
+    // (no reinstala crons de intervalo corto; usa marcadores por sesión)
+    import('./cron/sessionScheduler').then((mod) => {
+      mod.initSessionScheduler().catch((err) => console.warn('Session scheduler init failed:', err));
+    });
     cronJobsInitialized = true;
     console.log('App services initialized successfully');
   } catch (error) {
