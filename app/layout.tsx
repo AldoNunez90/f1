@@ -48,8 +48,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. Extraemos el ID de Analytics de las variables de entorno.
-  // Debe empezar con NEXT_PUBLIC_ para que Next.js lo exponga al cliente de forma segura.
+
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (

@@ -123,6 +123,7 @@ export default async function DriversPage({ searchParams }: PageProps) {
 
       {/* Grid Interactivo con Input de Búsqueda */}
       <DriversGrid initialDrivers={sortedDrivers} />
+      
     </div>
   );
 }

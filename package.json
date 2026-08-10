@@ -11,6 +11,7 @@
     "populate:images": "npx tsx scripts/populate-driver-images.ts"
   },
   "dependencies": {
+    "@auth/mongodb-adapter": "^3.11.3",
     "@vercel/analytics": "^2.0.1",
     "@vitalets/google-translate-api": "^9.2.1",
     "axios": "^1.7.9",
