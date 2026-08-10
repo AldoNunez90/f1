@@ -1,8 +1,8 @@
-// middleware.ts
+// proxy.ts (en la raíz de tu proyecto)
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Verificamos si existe la cookie de sesión de Auth.js
   const sessionToken = 
     request.cookies.get("authjs.session-token")?.value || 
@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
 
   // Si intenta entrar a /prode o /perfil sin la cookie, lo redirigimos al login
   if (!sessionToken && (pathname.startsWith("/prode") || pathname.startsWith("/perfil"))) {
-    return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+    return NextResponse.redirect(new URL("/auth/signin", request.url));
   }
 
   return NextResponse.next();
