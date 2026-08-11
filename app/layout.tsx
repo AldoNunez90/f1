@@ -4,8 +4,9 @@ import "./globals.css";
 import { initializeAppServices } from "@/lib/init";
 import { Navbar } from "@/app/components/layout/Navbar";
 import Script from "next/script";
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 import { F1Provider } from "@/lib/context/F1Context";
+import { SessionProvider } from "next-auth/react";
 
 // Inicializar servicios del servidor
 initializeAppServices();
@@ -26,20 +27,20 @@ export const metadata: Metadata = {
   title: "F1 HUB - Últimas noticias de Fórmula 1",
   description: "Actualizaciones de las últimas novedades sobre F1",
   openGraph: {
-    title: 'F1 HUB - Últimas noticias de Fórmula 1',
-    description: 'Actualizaciones de las últimas novedades sobre F1',
-    url: 'https://f1-xi-ten.vercel.app/',
-    siteName: 'F1 HUB',
+    title: "F1 HUB - Últimas noticias de Fórmula 1",
+    description: "Actualizaciones de las últimas novedades sobre F1",
+    url: "https://f1-xi-ten.vercel.app/",
+    siteName: "F1 HUB",
     images: [
       {
-        url: 'https://f1-xi-ten.vercel.app/_next/image?url=%2FcascoDrivers.webp&w=640&q=75', 
+        url: "https://f1-xi-ten.vercel.app/_next/image?url=%2FcascoDrivers.webp&w=640&q=75",
         width: 512,
         height: 512,
-        alt: 'Portada de Documentos FIA',
+        alt: "Portada de Documentos FIA",
       },
     ],
-    locale: 'es_AR',
-    type: 'website',
+    locale: "es_AR",
+    type: "website",
   },
 };
 
@@ -48,7 +49,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
@@ -59,7 +59,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         {gaId && (
           <>
-            <Script 
+            <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
               strategy="afterInteractive"
             />
@@ -77,13 +77,14 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <F1Provider>
-
-        <Navbar />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
-          {children}
-        </main>
-        </F1Provider>
+        <SessionProvider>
+          <F1Provider>
+            <Navbar />
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
+              {children}
+            </main>
+          </F1Provider>
+        </SessionProvider>
         <Analytics />
         <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">

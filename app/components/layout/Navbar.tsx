@@ -4,22 +4,34 @@ import Link from "next/link";
 import { useState, type MouseEvent } from "react";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-/**
- * Navbar con navegación principal
- */
+import { useSession } from "next-auth/react";
+
+
 export function Navbar() {
   const pathname = usePathname();
   const [hidden, setHidden] = useState(true);
+  const { data: session, status } = useSession();
 
-  const links = [
+  const baseLinks = [
     { href: "/", label: "Inicio" },
-    { href: "/novedades", label: "Novedades"},
-    { href: "/drivers", label: "Pilotos"},
-    { href: "/teams", label: "Equipos"},
-    {href: "/teams/chronology", label: "Cronología"},
-    { href: "/championship", label: "Campeonatos"},
-    { href: "/sessions", label: "Sesiones"}
+    { href: "/novedades", label: "Novedades" },
+    { href: "/drivers", label: "Pilotos" },
+    { href: "/teams", label: "Equipos" },
+    { href: "/teams/chronology", label: "Cronología" },
+    { href: "/championship", label: "Campeonatos" },
+    { href: "/sessions", label: "Sesiones" },
+    { href: "/prode", label: "Prode" },
   ];
+
+    // 2. Determinar el enlace dinámico según el estado de la sesión
+  const authLink = session
+    ? { href: "/perfil", label: "Mi Perfil" }
+    : { href: "/auth/signin", label: "Acceder" };
+
+  // 3. Filtrar y construir la lista final de enlaces
+  const links =  status === "loading"
+    ? baseLinks
+    : [...baseLinks, authLink];
 
   return (
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
@@ -30,7 +42,7 @@ export function Navbar() {
             <Image src={"/logo.webp"} alt="logo" width={80} height={60} loading="eager" />
           </Link>
 
-          {/* Links */}
+          {/* Links Desktop */}
           <div className="hidden md:flex items-center gap-8">
             {links.map((link) => {
               const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -45,7 +57,7 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   onClick={handleClick}
-                  className="text-gray-600 dark:text-gray-300 hover:cyan-500 dark:hover:text-cyan-600 transition font-medium text-sm"
+                  className="text-gray-600 dark:text-gray-300 hover:text-cyan-500 dark:hover:text-cyan-400 transition font-medium text-sm"
                 >
                   {link.label}
                 </Link>
@@ -71,17 +83,15 @@ export function Navbar() {
                       event.preventDefault();
                       window.dispatchEvent(new CustomEvent("resetSessionsView"));
                     }
-                    setHidden(!hidden)
+                    setHidden(true);
                   };
 
                   return (
-                    <li key={link.href} className="">
+                    <li key={link.href}>
                       <Link
-                        key={link.href}
                         href={link.href}
                         onClick={handleClick}
-                        className="text-gray-800 dark:text-white transirion font-medium text-xl flex justify-evenly mb-2 mt-2 
-                "
+                        className="text-gray-800 dark:text-white transition font-medium text-xl flex justify-evenly mb-2 mt-2"
                       >
                         {link.label}
                       </Link>
