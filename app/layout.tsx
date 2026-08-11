@@ -7,6 +7,7 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { F1Provider } from "@/lib/context/F1Context";
 import { SessionProvider } from "next-auth/react";
+import  Link  from "next/link"
 
 // Inicializar servicios del servidor
 initializeAppServices();
@@ -92,11 +93,15 @@ export default function RootLayout({
           </F1Provider>
         </SessionProvider>
         <Analytics />
-        <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 mt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              © 2026 F1 News | Powered by Open F1 API • Made with AI assistance
+              © 2026 F1 HUB | Powered by Open F1 API • Made with AI assistance
             </p>
+            <div className="flex gap-6 text-sm font-semibold text-cyan-600 dark:text-cyan-400">
+              <Link href="/privacy" className="hover:underline">Políticas de Privacidad</Link>
+              <Link href="/terms" className="hover:underline">Términos de Uso</Link>
+            </div>
           </div>
         </footer>
       </body>

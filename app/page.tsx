@@ -218,39 +218,40 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-      {/* Hero Section */}
-      <section className="min-h-96 relative overflow-hidden rounded-2xl md:py-12 text-white justify-items-end items-center hidden md:block">
-        <div className="hidden md:block absolute inset-0">
+      {/* Hero Section - AHORA VISIBLE EN MOBILE */}
+      <section className="min-h-96 relative overflow-hidden rounded-2xl py-8 md:py-12 text-white flex justify-center md:justify-end items-center">
+        {/* Imagen de fondo (ahora visible siempre) */}
+        <div className="absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
             alt="F1 HUB - Hero Background"
             fill
             priority
-            sizes="(max-width: 1200px) 100vw, 1200px"
+            sizes="100vw"
             className="object-cover object-center z-0"
           />
         </div>
 
-        <div className="absolute inset-0 bg-linear-to-r from-black/50 via-transparent to-black/20 z-0 pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/50 to-black/30 z-0 pointer-events-none" />
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
-        <div className="absolute -left-32 -bottom-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
 
-        <div className="hidden md:flex relative z-10 flex-col max-w-1/3 m-5 bg-gray-600/30 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
-          <h1 className="text-5xl font-bold mb-4 mt-4 tracking-tight">F1 HUB</h1>
-          <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line font-medium">
-           F1 HUB es una plataforma interactiva para los fanáticos de la Fórmula 1. Al iniciar sesión con tu cuenta de Google, podrás armar tu Garaje personalizado guardando a tus pilotos y escuderías favoritas, y participar en nuestro Prode para pronosticar los resultados de las clasificaciones y carreras de la temporada.
+        {/* Contenedor de texto - Quitamos el hidden */}
+        <div className="flex relative z-10 flex-col max-w-lg m-5 bg-slate-900/80 md:bg-gray-600/30 backdrop-blur-md rounded-2xl p-6 border border-white/20 text-center md:text-left shadow-2xl">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-white">F1 HUB</h1>
+          <p className="text-slate-200 text-base md:text-lg mb-8 leading-relaxed font-medium">
+            F1 HUB es una plataforma interactiva para los fanáticos de la Fórmula 1. Al iniciar sesión con tu cuenta de Google, podrás armar tu Garaje personalizado guardando a tus pilotos y escuderías favoritas, y participar en nuestro Prode para pronosticar los resultados de las clasificaciones y carreras de la temporada.
           </p>
 
-          <div className="flex gap-4 flex-wrap mb-10">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
             <Link
               href="/perfil"
-              className="px-8 py-3 border-2 border-white text-white bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition mb-8 text-center"
+              className="px-6 py-3 border-2 border-cyan-400 text-cyan-50 bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:text-slate-900 hover:border-cyan-500 transition text-center shadow-[0_0_15px_rgba(34,211,238,0.3)]"
             >
-              Acceder →
+              Acceder con Google →
             </Link>
             <Link
               href="/sessions"
-              className="px-8 py-3 bg-cyan-900/50 border-2 border-white text-white font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition text-center"
+              className="px-6 py-3 bg-slate-800/80 border-2 border-slate-600 text-white font-bold rounded-lg hover:bg-slate-700 hover:border-slate-500 transition text-center"
             >
               Resultados por sesiones
             </Link>
