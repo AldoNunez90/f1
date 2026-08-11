@@ -2,42 +2,51 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ProdeClient from "./ProdeClient";
-import { getPredictionForRace, getUserPredictionsHistory } from "@/app/actions/prode";
+import { getProdePageData } from "@/app/actions/prode";
 
-// 1. Lógica del próximo evento (Más adelante esto vendrá de una BD de calendario)
-const NEXT_RACE = {
-  raceId: "monaco-2026",
-  raceName: "GP de Mónaco 2026",
-  qualifyingLockout: new Date(Date.now() + 86400000).toISOString(), // Cierra en 24hs
-  mainRaceLockout: new Date(Date.now() + 172800000).toISOString(), // Cierra en 48hs
-};
+interface PageProps {
+  searchParams: Promise<{ raceId?: string }>;
+}
 
-
-export default async function ProdePageServer() {
+export default async function ProdePageServer({ searchParams }: PageProps) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/auth/signin?callbackUrl=/prode");
   }
 
+  const resolvedParams = await searchParams;
+  const data = await getProdePageData(resolvedParams.raceId);
 
-  // 2. Calcular estado de bloqueo en el servidor
+  if (!data || !data.currentRace) {
+    return <div className="p-10 text-center text-white">No hay carreras configuradas en el calendario.</div>;
+  }
+
   const now = new Date();
-  const isQualyOpen = now < new Date(NEXT_RACE.qualifyingLockout);
-  const isRaceOpen = now < new Date(NEXT_RACE.mainRaceLockout);
+  
+  // Calculamos todo una sola vez
+  const isQualyOpen = now < new Date(data.currentRace.qualifyingLockout);
+  const isRaceOpen = now < new Date(data.currentRace.mainRaceLockout);
+  
+  const isSprintQualyOpen = data.currentRace.qualifyingSprintLockout
+    ? now < new Date(data.currentRace.qualifyingSprintLockout)
+    : false;
 
-  // 3. Obtener datos de MongoDB
-  const currentPrediction = await getPredictionForRace(NEXT_RACE.raceId);
-  const history = await getUserPredictionsHistory();
+  const isSprintRaceOpen = data.currentRace.mainRaceSprintLockout
+    ? now < new Date(data.currentRace.mainRaceSprintLockout)
+    : false;
 
   return (
     <ProdeClient 
       userId={session.user.id} 
-      schedule={NEXT_RACE}
+      schedule={data.currentRace}
+      allRaces={data.allRaces}
       isQualyOpen={isQualyOpen}
       isRaceOpen={isRaceOpen}
-      initialData={currentPrediction}
-      history={history}
+      isSprintQualyOpen={isSprintQualyOpen}
+      isSprintRaceOpen={isSprintRaceOpen}
+      initialData={data.currentPrediction}
+      history={data.history}
     />
   );
 }
