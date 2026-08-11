@@ -25,18 +25,19 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "F1 HUB - Últimas noticias de Fórmula 1",
-  description: "Actualizaciones de las últimas novedades sobre F1",
+  description: "F1 HUB: datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
   openGraph: {
     title: "F1 HUB - Últimas noticias de Fórmula 1",
-    description: "Actualizaciones de las últimas novedades sobre F1",
-    url: "https://f1-xi-ten.vercel.app/",
+    description:
+      "F1 HUB: datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
+    url: "https://www.f1hub.com.ar/",
     siteName: "F1 HUB",
     images: [
       {
-        url: "https://f1-xi-ten.vercel.app/_next/image?url=%2FcascoDrivers.webp&w=640&q=75",
+        url: "https://www.f1hub.com.ar/cascoDrivers.webp",
         width: 512,
         height: 512,
-        alt: "Portada de Documentos FIA",
+        alt: "F1 HUB",
       },
     ],
     locale: "es_AR",
