@@ -24,10 +24,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "F1 HUB - Últimas noticias de Fórmula 1",
+  title: "F1 HUB",
   description: "F1 HUB: datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
   openGraph: {
-    title: "F1 HUB - Últimas noticias de Fórmula 1",
+    title: "F1 HUB",
     description:
       "F1 HUB: datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
     url: "https://www.f1hub.com.ar/",
