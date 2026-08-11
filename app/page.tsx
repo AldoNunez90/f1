@@ -223,7 +223,7 @@ export default function Home() {
         <div className="hidden md:block absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
-            alt="F1 Hub Hero Background"
+            alt="F1 HUB - Hero Background"
             fill
             priority
             sizes="(max-width: 1200px) 100vw, 1200px"
@@ -238,15 +238,15 @@ export default function Home() {
         <div className="hidden md:flex relative z-10 flex-col max-w-1/3 m-5 bg-gray-600/30 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
           <h1 className="text-5xl font-bold mb-4 mt-4 tracking-tight">F1 HUB</h1>
           <p className="text-red-100 text-xl max-w-2xl mb-8 mt-4 whitespace-pre-line font-medium">
-            {`Tu fuente de datos de F1`}
+           F1 HUB es una plataforma interactiva para los fanáticos de la Fórmula 1. Al iniciar sesión con tu cuenta de Google, podrás armar tu Garaje personalizado guardando a tus pilotos y escuderías favoritas, y participar en nuestro Prode para pronosticar los resultados de las clasificaciones y carreras de la temporada.
           </p>
 
           <div className="flex gap-4 flex-wrap mb-10">
             <Link
-              href="/championship"
+              href="/perfil"
               className="px-8 py-3 border-2 border-white text-white bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:border-cyan-500 transition mb-8 text-center"
             >
-              Campeonatos →
+              Acceder →
             </Link>
             <Link
               href="/sessions"

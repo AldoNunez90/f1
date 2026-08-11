@@ -24,8 +24,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "F1 HUB",
-  description: "F1 HUB: datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
+  title: "F1 HUB - Noticias y Prode",
+  description: "La plataforma definitiva para seguir la Fórmula 1",
+  
   openGraph: {
     title: "F1 HUB",
     description:
@@ -56,7 +57,11 @@ export default function RootLayout({
     <html
       lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      
     >
+      <head>
+        <meta name="google-site-verification" content="D9ltZdI1paTPIbW9dKzIUXu7QwG5dmDWlq4dBLMSoUE" />
+      </head>
       <body className="min-h-full flex flex-col">
         {gaId && (
           <>
