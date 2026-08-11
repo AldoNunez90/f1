@@ -236,11 +236,18 @@ export default function Home() {
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
 
         {/* Contenedor de texto - Quitamos el hidden */}
-        <div className="flex relative z-10 flex-col max-w-lg m-5 bg-slate-900/80 md:bg-gray-600/30 backdrop-blur-md rounded-2xl p-6 border border-white/20 text-center md:text-left shadow-2xl">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 tracking-tight text-white">F1 HUB</h1>
-          <p className="text-slate-200 text-base md:text-lg mb-8 leading-relaxed font-medium">
-            F1 HUB es una plataforma interactiva para los fanáticos de la Fórmula 1. Al iniciar sesión con tu cuenta de Google, podrás armar tu Garaje personalizado guardando a tus pilotos y escuderías favoritas, y participar en nuestro Prode para pronosticar los resultados de las clasificaciones y carreras de la temporada.
-          </p>
+       <div className="flex relative z-10 flex-col max-w-lg m-5 bg-slate-900/95 md:bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 text-center md:text-left shadow-2xl">
+          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white">F1 HUB</h1>
+          
+          {/* Bloque explícito de propósito */}
+          <div className="bg-cyan-950/60 border border-cyan-800 p-4 rounded-xl mb-8 text-left">
+            <h2 className="text-cyan-400 font-bold text-xs uppercase tracking-wider mb-2">
+              Propósito de la aplicación
+            </h2>
+            <p className="text-slate-200 text-sm leading-relaxed">
+              F1 HUB es una plataforma interactiva de Fórmula 1. <strong>Utilizamos el inicio de sesión con Google</strong> exclusivamente para que puedas crear tu cuenta de forma segura, guardar tus pronósticos en el juego de Prode, mantener tu historial de aciertos y personalizar tu garaje con tus escuderías favoritas.
+            </p>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
             <Link

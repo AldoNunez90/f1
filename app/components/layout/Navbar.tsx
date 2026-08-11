@@ -37,9 +37,12 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+         {/* Logo en Navbar */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <Image src={"/logo.webp"} alt="logo" width={80} height={60} loading="eager" />
+            <Image src={"/logo.webp"} alt="F1 HUB Logo" width={80} height={60} loading="eager" />
+            <span className="text-gray-900 dark:text-white font-black uppercase tracking-widest">
+              F1 HUB
+            </span>
           </Link>
 
           {/* Links Desktop */}

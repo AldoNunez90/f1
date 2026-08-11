@@ -25,9 +25,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "F1 HUB - Noticias y Prode",
-  description: "La plataforma definitiva para seguir la Fórmula 1",
-  
+title: "F1 HUB", // 
+  description: "Plataforma de Fórmula 1. Inicia sesión con tu cuenta de Google para guardar tus pronósticos en el Prode y armar tu Garaje.",
   openGraph: {
     title: "F1 HUB",
     description:
