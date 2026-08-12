@@ -23,6 +23,12 @@ export default async function ProfilePage() {
     _id: new ObjectId(session.user.id) 
   });
 
+  const scores = await db.collection('leaderboard').findOne({
+    userId: session.user.id,
+  })
+
+
+
   const userFavorites = userDocument?.favorites || {};
 
   // 2. Cruzamos los IDs guardados con nuestro catálogo local para obtener fotos y colores
@@ -69,16 +75,16 @@ export default async function ProfilePage() {
           </div>
           <div className="mt-8 space-y-4">
             <div className="flex justify-between items-end border-b border-slate-800 pb-2">
-              <span className="text-slate-400 text-sm">Puntos totales</span>
-              <span className="text-2xl font-mono font-bold text-white">0</span>
+              <span className="text-slate-400 text-sm">Puntos en Torneo</span>
+              <span className="text-2xl font-mono font-bold text-white">{scores.officialPoints}</span>
             </div>
             <div className="flex justify-between items-end border-b border-slate-800 pb-2">
-              <span className="text-slate-400 text-sm">Aciertos exactos</span>
-              <span className="text-xl font-mono font-bold text-white">0</span>
+              <span className="text-slate-400 text-sm">Desafío Caos</span>
+              <span className="text-xl font-mono font-bold text-white">{scores.chaosPoints}</span>
             </div>
             <div className="flex justify-between items-end">
-              <span className="text-slate-400 text-sm">Ranking global</span>
-              <span className="text-xl font-mono font-bold text-cyan-400">#--</span>
+              <span className="text-slate-400 text-sm">Tiempos de pole</span>
+              <span className="text-xl font-mono font-bold text-cyan-400">{scores.telemetryWins}</span>
             </div>
           </div>
         </div>

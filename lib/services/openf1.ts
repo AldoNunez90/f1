@@ -1,7 +1,7 @@
 // lib/services/openf1.ts
 
 import { RaceEvent } from "@/lib/data/calendar";
-
+import { normalizeDriverId } from "@/lib/data/drivers-mapping";
 
 export interface RaceResultSummary {
   sprintPoleDriverId?: string;
@@ -66,15 +66,23 @@ export async function fetchRaceResultsFromOpenF1(keys: RaceEvent["openF1Keys"], 
     }
 
     return {
-      qualifyingPoleDriverId: polePosition.driver_number?.toString(),
-      poleTimeMillis: polePosition.lap_duration ? Math.round(polePosition.lap_duration * 1000) : undefined,
-      mainPodium: p1 && p2 && p3 ? { p1, p2, p3 } : undefined,
-      redFlagsCount,
-      dnfCount,
-      sprintPoleDriverId,
-      sprintPodium,
-      isComplete: true,
-    };
+      qualifyingPoleDriverId: normalizeDriverId(polePosition.driver_number?.toString()),
+  poleTimeMillis: polePosition.lap_duration ? Math.round(polePosition.lap_duration * 1000) : undefined,
+  mainPodium: p1 && p2 && p3 ? {
+    p1: normalizeDriverId(p1),
+    p2: normalizeDriverId(p2),
+    p3: normalizeDriverId(p3),
+  } : undefined,
+  redFlagsCount: typeof redFlagsCount === "number" ? redFlagsCount : 0,
+  dnfCount: typeof dnfCount === "number" ? dnfCount : 0,
+  sprintPoleDriverId: normalizeDriverId(sprintPoleDriverId),
+  sprintPodium: sprintPodium ? {
+    p1: normalizeDriverId(sprintPodium.p1),
+    p2: normalizeDriverId(sprintPodium.p2),
+    p3: normalizeDriverId(sprintPodium.p3),
+  } : undefined,
+  isComplete: true,
+};
   } catch (error) {
     console.error("Error consultando OpenF1:", error);
     return null;
