@@ -36,3 +36,15 @@ export interface RaceSessionSchedule {
   sprintRaceLockout?: string;
   mainRaceLockout: string;
 }
+
+
+export interface LeaderboardEntry {
+  userId: string;
+  userName: string;
+  userImage?: string;
+  officialPoints: number; // Puntos acumulados Torneo Oficial
+  chaosPoints: number;    // Puntos acumulados Torneo Caos
+  telemetryWins: number;  // Veces que ganó el bonus de tiempo de pole
+  racesPredicted: number; // Cantidad de Grandes Premios en los que participó
+  updatedAt: Date;
+}
