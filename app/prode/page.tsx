@@ -38,6 +38,7 @@ export default async function ProdePageServer({ searchParams }: PageProps) {
 
   return (
     <ProdeClient 
+    key={data.currentRace.raceId}
       userId={session.user.id} 
       schedule={data.currentRace}
       allRaces={data.allRaces}

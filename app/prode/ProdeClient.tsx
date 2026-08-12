@@ -9,6 +9,8 @@ import type { FullRacePrediction } from "@/lib/types/prode";
 import type { RaceEvent } from "@/lib/data/calendar";
 import { PoleTimeInput } from "@/app/components/Prode/PoleTimeInput";
 import { SuccessModal } from "../components/Prode/SuccessModal";
+import { ProdeNav } from "@/app/components/ProdeNav";
+import { getFastestLapForRace } from "@/lib/utils/circuitUtils";
 
 interface ScheduleProps {
   raceId: string;
@@ -18,6 +20,7 @@ interface ScheduleProps {
   mainRaceSprintLockout?: string;
   qualifyingLockout: string;
   mainRaceLockout: string;
+  circuitName: string;
 }
 
 interface Props {
@@ -71,6 +74,10 @@ export default function ProdeClient({
   const [poleTimeMs, setPoleTimeMs] = useState<number>(initialData?.telemetry?.poleTimeMillis || 0);
   const [redFlags, setRedFlags] = useState(initialData?.chaos?.redFlagsCount || 0);
   const [dnfs, setDnfs] = useState(initialData?.chaos?.dnfCount || 0);
+
+
+
+  const fastestLapText = getFastestLapForRace(schedule.circuitName, schedule.raceName);
 
   // Validación de duplicados en podios
   const mainPodium = [p1Driver, p2Driver, p3Driver].filter(Boolean);
@@ -127,6 +134,7 @@ export default function ProdeClient({
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10 max-w-5xl mx-auto space-y-12">
+      <ProdeNav />
       
       {/* =========================================
           SECCIÓN 1: PREDICCIÓN DEL EVENTO ACTUAL
@@ -332,10 +340,15 @@ export default function ProdeClient({
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <h3 className="text-lg font-bold text-white">Tiempo Estimado de Pole</h3>
-                    {!isQualyOpen && <span className="text-xs text-red-400 font-bold bg-red-950/40 px-2 py-1 rounded">CERRADO</span>}
+                    {!isQualyOpen && (
+                      <span className="text-xs text-red-400 font-bold bg-red-950/40 px-2 py-1 rounded">
+                        CERRADO
+                      </span>
+                    )}
                   </div>
                   <p className="text-xs text-slate-400">
-                    Récord de pista histórico: <span className="font-mono text-cyan-400">1:10.166</span>
+                    Récord de pista histórico:{" "}
+                    <span className="font-mono text-cyan-400 font-bold">{fastestLapText}</span>
                   </p>
 
                   <PoleTimeInput
@@ -404,100 +417,100 @@ export default function ProdeClient({
       </section>
 
       {/* =========================================
-          SECCIÓN 2: HISTORIAL GENERAL EN TABLA
+          SECCIÓN 2: HISTORIAL GENERAL DE PREDICCIONES
       ========================================= */}
       <section className="border-t border-slate-800 pt-12 space-y-6">
-  <h2 className="text-2xl font-black">Historial de Predicciones</h2>
+        <h2 className="text-2xl font-black">Historial de Predicciones</h2>
 
-  {sortedHistory.length === 0 ? (
-    <p className="text-slate-400 text-sm">Aún no tienes predicciones guardadas.</p>
-  ) : (
-    <div className="grid grid-cols-1 gap-6">
-      {sortedHistory.map((pred) => {
-        const raceInfo = allRaces.find((r) => r.raceId === pred.raceId);
-        const isSprint = raceInfo?.isSprintWeekend;
+        {sortedHistory.length === 0 ? (
+          <p className="text-slate-400 text-sm">Aún no tienes predicciones guardadas.</p>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {sortedHistory.map((pred) => {
+              const raceInfo = allRaces.find((r) => r.raceId === pred.raceId);
+              const isSprint = raceInfo?.isSprintWeekend;
 
-        return (
-          <div 
-            key={pred._id} 
-            className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4"
-          >
-            {/* Encabezado del Evento */}
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <div>
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
-                  R{raceInfo?.round || "-"}: {raceInfo?.circuitName}
-                </span>
-                <h3 className="text-lg font-black text-white">{raceInfo?.raceName || pred.raceId}</h3>
-              </div>
-              {isSprint && (
-                <span className="text-[10px] font-black bg-purple-950 text-purple-300 border border-purple-800/60 px-2.5 py-1 rounded-full uppercase">
-                  ⚡ Sprint Weekend
-                </span>
-              )}
-            </div>
-
-            {/* Bloques de Sesiones Independientes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Bloque 1: Sesión Sprint (Solo si aplica) */}
-              {isSprint && (
-                <div className="bg-slate-950/60 border border-purple-900/40 rounded-xl p-4 space-y-3">
-                  <div className="flex justify-between items-center border-b border-purple-900/20 pb-2">
-                    <span className="text-xs font-bold text-purple-400 uppercase">⚡ Evento Sprint</span>
+              return (
+                <div 
+                  key={pred._id} 
+                  className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4"
+                >
+                  {/* Encabezado del Evento */}
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <div>
+                      <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                        R{raceInfo?.round || "-"}: {raceInfo?.circuitName}
+                      </span>
+                      <h3 className="text-lg font-black text-white">{raceInfo?.raceName || pred.raceId}</h3>
+                    </div>
+                    {isSprint && (
+                      <span className="text-[10px] font-black bg-purple-950 text-purple-300 border border-purple-800/60 px-2.5 py-1 rounded-full uppercase">
+                        ⚡ Sprint Weekend
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-2 text-xs">
-                    <div>
-                      <span className="text-slate-400 block">Pole Sprint:</span>
-                      <span className="font-bold text-white capitalize">{pred.official?.sprintPoleDriverId || "-"}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block">Podio Sprint:</span>
-                      <div className="font-medium text-slate-200 mt-0.5 capitalize">
-                        🥇 {pred.official?.sprintPodium?.p1 || "-"} | 🥈 {pred.official?.sprintPodium?.p2 || "-"} | 🥉 {pred.official?.sprintPodium?.p3 || "-"}
+                  {/* Bloques de Sesiones Independientes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* Bloque 1: Sesión Sprint (Solo si aplica) */}
+                    {isSprint && (
+                      <div className="bg-slate-950/60 border border-purple-900/40 rounded-xl p-4 space-y-3">
+                        <div className="flex justify-between items-center border-b border-purple-900/20 pb-2">
+                          <span className="text-xs font-bold text-purple-400 uppercase">⚡ Evento Sprint</span>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <span className="text-slate-400 block">Pole Sprint:</span>
+                            <span className="font-bold text-white capitalize">{pred.official?.sprintPoleDriverId || "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block">Podio Sprint:</span>
+                            <div className="font-medium text-slate-200 mt-0.5 capitalize">
+                              🥇 {pred.official?.sprintPodium?.p1 || "-"} | 🥈 {pred.official?.sprintPodium?.p2 || "-"} | 🥉 {pred.official?.sprintPodium?.p3 || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bloque 2: Sesión Principal (Clasificación + Carrera + Caos) */}
+                    <div className={`bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3 ${!isSprint ? "md:col-span-2" : ""}`}>
+                      <div className="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span className="text-xs font-bold text-cyan-400 uppercase">🏆 Evento Principal</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-slate-400 block">Poleman:</span>
+                          <span className="font-bold text-white capitalize">{pred.official?.qualifyingPoleDriverId || "-"}</span>
+                          <span className="text-slate-500 text-[10px] block font-mono">
+                            {formatMsToTime(pred.telemetry?.poleTimeMillis)}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-slate-400 block">Podio Principal:</span>
+                          <div className="font-medium text-slate-200 mt-0.5 capitalize">
+                            🥇 {pred.official?.mainPodium?.p1 || "-"} | 🥈 {pred.official?.mainPodium?.p2 || "-"} | 🥉 {pred.official?.mainPodium?.p3 || "-"}
+                          </div>
+                        </div>
+
+                        <div className="sm:col-span-2 border-t border-slate-800/60 pt-2 flex gap-4 text-slate-400 text-[11px]">
+                          <span>B. Rojas: <strong className="text-white font-mono">{pred.chaos?.redFlagsCount ?? 0}</strong></span>
+                          <span>DNFs: <strong className="text-white font-mono">{pred.chaos?.dnfCount ?? 0}</strong></span>
+                        </div>
                       </div>
                     </div>
+
                   </div>
                 </div>
-              )}
-
-              {/* Bloque 2: Sesión Principal (Clasificación + Carrera + Caos) */}
-              <div className={`bg-slate-950/60 border border-slate-800 rounded-xl p-4 space-y-3 ${!isSprint ? "md:col-span-2" : ""}`}>
-                <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <span className="text-xs font-bold text-cyan-400 uppercase">🏆 Evento Principal</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-400 block">Poleman:</span>
-                    <span className="font-bold text-white capitalize">{pred.official?.qualifyingPoleDriverId || "-"}</span>
-                    <span className="text-slate-500 text-[10px] block font-mono">
-                      {formatMsToTime(pred.telemetry?.poleTimeMillis)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <span className="text-slate-400 block">Podio Principal:</span>
-                    <div className="font-medium text-slate-200 mt-0.5 capitalize">
-                      🥇 {pred.official?.mainPodium?.p1 || "-"} | 🥈 {pred.official?.mainPodium?.p2 || "-"} | 🥉 {pred.official?.mainPodium?.p3 || "-"}
-                    </div>
-                  </div>
-
-                  <div className="sm:col-span-2 border-t border-slate-800/60 pt-2 flex gap-4 text-slate-400 text-[11px]">
-                    <span>B. Rojas: <strong className="text-white font-mono">{pred.chaos?.redFlagsCount ?? 0}</strong></span>
-                    <span>DNFs: <strong className="text-white font-mono">{pred.chaos?.dnfCount ?? 0}</strong></span>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+              );
+            })}
           </div>
-        );
-      })}
-    </div>
-  )}
-</section>
+        )}
+      </section>
 
       {/* Modal de Éxito */}
       <SuccessModal 

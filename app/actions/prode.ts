@@ -126,3 +126,17 @@ export async function getProdePageData(selectedRaceId?: string) {
     history: JSON.parse(JSON.stringify(history)),
   };
 }
+
+export async function getUserPredictionForRace(targetUserId: string, raceId: string) {
+  const db = (await clientPromise).db();
+  const prediction = await db.collection("predictions").findOne({
+    userId: targetUserId,
+    raceId: raceId,
+  });
+  return prediction ? JSON.parse(JSON.stringify(prediction)) : null;
+}
+
+export async function getUserPredictionsCount(userId: string): Promise<number> {
+  const db = (await clientPromise).db();
+  return await db.collection("predictions").countDocuments({ userId });
+}

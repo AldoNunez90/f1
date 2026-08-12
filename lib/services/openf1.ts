@@ -57,7 +57,7 @@ export async function fetchRaceResultsFromOpenF1(keys: RaceEvent["openF1Keys"], 
           p3: sprintData.find((r: { position: number }) => r.position === 3)?.driver_number?.toString() || "",
         };
       }
-
+ 
       if (keys.sprintShootoutSessionKey) {
         const sprintGridRes = await fetch(`${BASE_URL}/starting_grid?session_key=${keys.sprintShootoutSessionKey}`);
         const sprintGridData = await sprintGridRes.json();

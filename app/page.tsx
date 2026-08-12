@@ -65,7 +65,6 @@ function sanitizeDescription(description?: string) {
   return description.replace(/<[^>]+>/g, "").trim();
 }
 
-// Función para normalizar nombres a slugs, para búsquedas consistentes.
 const toSlug = (name?: string) =>
   name?.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
@@ -81,11 +80,10 @@ export default function Home() {
     [dataSessions]
   );
 
-  // Hook tipado limpiamente sin necesidad de cast 'as any'
   const { sessionQueue, liveSessionKey } = useSessionQueue(sessions, now);
 
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
-  const raceCount = 2;
+  const raceCount = 24;
   const sessionCount = sessions.length;
   const newsItems = Array.isArray(news) ? news.slice(0, 3) : [];
 
@@ -99,7 +97,6 @@ export default function Home() {
         .slice(0, 3)
     : [];
 
-  // --- LÓGICA DE RESOLUCIÓN DE LA SESIÓN MOSTRADA ---
   const nextSession = useMemo(() => {
     const source =
       sessionQueue && sessionQueue.length > 0
@@ -110,7 +107,6 @@ export default function Home() {
       .slice()
       .sort((a, b) => new Date(a.date_start!).getTime() - new Date(b.date_start!).getTime());
 
-    // Si la queue detecta una sesión en vivo por el marker
     const liveFromMarker = liveSessionKey
       ? validSessions.find((s) => s.session_key === liveSessionKey)
       : undefined;
@@ -130,7 +126,6 @@ export default function Home() {
     );
   }, [sessions, sessionQueue, liveSessionKey, now]);
 
-  // Chequeo explícito de estado EN VIVO para styling
   const isLiveNow = useMemo(() => {
     if (!nextSession?.date_start) return false;
     if (liveSessionKey && nextSession.session_key === liveSessionKey) return true;
@@ -178,11 +173,9 @@ export default function Home() {
     },
   ];
 
-  // Obtener trazado SVG y calcular duración según 'circuits.es'
   const circuitData = useMemo(() => {
     if (!nextSession) return null;
 
-    // 1. Unificar la búsqueda: encontrar el `circuitInfo` que coincida con la sesión actual.
     const circuitInfo = circuits.find(
       (c) =>
         c.circuit_name === nextSession.circuit_name ||
@@ -190,7 +183,6 @@ export default function Home() {
         c.circuit_short_name === nextSession.circuit_short_name
     );
 
-    // 2. Probar candidatos a slugs para mapear con el dataset local de circuitsPaths
     const slugCandidates = [
       toSlug(circuitInfo?.circuit_short_name),
       toSlug(circuitInfo?.circuit_name),
@@ -199,12 +191,10 @@ export default function Home() {
       toSlug(nextSession.location),
     ].filter((s): s is string => Boolean(s));
 
-    // Ahora comprobamos contra circuitsPaths
     const matchedSlug = slugCandidates.find((slug) => circuitsPaths[slug]);
 
     if (!matchedSlug) return null;
 
-    // 3. Calcular la duración dinámicamente
     const animationDuration = getCircuitAnimationDuration(
       circuitInfo?.fastest_lap_time,
       circuitInfo?.circuit_length
@@ -218,9 +208,8 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-      {/* Hero Section - AHORA VISIBLE EN MOBILE */}
-      <section className="min-h-96 relative overflow-hidden rounded-2xl py-8 md:py-12 text-white flex justify-center md:justify-end items-center">
-        {/* Imagen de fondo (ahora visible siempre) */}
+      {/* Hero Section Reestructurado */}
+      <section className="min-h-96 relative overflow-hidden rounded-3xl py-8 md:py-12 text-white flex justify-center md:justify-end items-center shadow-2xl">
         <div className="absolute inset-0">
           <Image
             src="/landingImgAlfaRomeo.webp"
@@ -232,41 +221,58 @@ export default function Home() {
           />
         </div>
 
-        <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/50 to-black/30 z-0 pointer-events-none" />
-        <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-800 opacity-20 blur-3xl z-0"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-slate-950/90 via-slate-950/70 to-slate-900/40 z-0 pointer-events-none" />
+        <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl z-0 pointer-events-none"></div>
 
-        {/* Contenedor de texto - Quitamos el hidden */}
-       <div className="flex relative z-10 flex-col max-w-lg m-5 bg-slate-900/95 md:bg-slate-900/80 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 text-center md:text-left shadow-2xl">
-          <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-white">F1 HUB</h1>
-          
-          {/* Bloque explícito de propósito */}
-          <div className="bg-cyan-950/60 border border-cyan-800 p-4 rounded-xl mb-8 text-left">
-            <h2 className="text-cyan-400 font-bold text-xs uppercase tracking-wider mb-2">
-              Propósito de la aplicación
-            </h2>
-            <p className="text-slate-200 text-sm leading-relaxed">
-              F1 HUB es una plataforma interactiva de Fórmula 1. <strong>Utilizamos el inicio de sesión con Google</strong> exclusivamente para que puedas crear tu cuenta de forma segura, guardar tus pronósticos en el juego de Prode, mantener tu historial de aciertos y personalizar tu garaje con tus escuderías favoritas.
+        <div className="flex relative z-10 flex-col max-w-lg m-5 bg-slate-900/90 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/10 text-center md:text-left shadow-2xl">
+          <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tight text-white">
+            F1 <span className="text-cyan-400">HUB</span>
+          </h1>
+          <p className="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
+            Tu centro de noticias, resultados y pronósticos de Fórmula 1 en tiempo real.
+          </p>
+
+          {/* Destacado del Juego de Prode */}
+          <div className="bg-slate-950/80 border border-cyan-500/30 p-5 rounded-2xl mb-6 text-left relative overflow-hidden shadow-inner">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-cyan-400 font-extrabold text-xs uppercase tracking-widest flex items-center gap-1.5">
+                Prode F1
+              </span>
+              <span className="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full font-bold">
+                Temporada 2026
+              </span>
+            </div>
+            <p className="text-slate-200  leading-relaxed mb-4">
+              Demuestra tu conocimiento: predice poles, podios, tiempos de vuelta y eventos de carrera para sumar puntos en la tabla general.
             </p>
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href="/prode"
+                className="w-full py-2.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs text-center transition-all shadow-lg"
+              >
+                🏎️ Apostar Ahora
+              </Link>
+              <Link
+                href="/prode/leaderboard"
+                className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs text-center border border-slate-700 transition-all"
+              >
+                🏆 Posiciones
+              </Link>
+            </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-            <Link
-              href="/perfil"
-              className="px-6 py-3 border-2 border-cyan-400 text-cyan-50 bg-cyan-900/50 font-bold rounded-lg hover:bg-cyan-500 hover:text-slate-900 hover:border-cyan-500 transition text-center shadow-[0_0_15px_rgba(34,211,238,0.3)]"
-            >
-              Acceder con Google →
-            </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
             <Link
               href="/sessions"
-              className="px-6 py-3 bg-slate-800/80 border-2 border-slate-600 text-white font-bold rounded-lg hover:bg-slate-700 hover:border-slate-500 transition text-center"
+              className="px-5 py-2.5 bg-slate-800/80 border border-slate-600 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition text-center"
             >
-              Resultados por sesiones
+              Ver Cronograma de Sesiones →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* --- WIDGET SESIÓN ACTIVA O PRÓXIMA --- */}
+      {/* Widget Sesión Activa */}
       {!sessionsLoading && nextSession ? (
         <section
           className={`relative overflow-hidden rounded-3xl border p-6 md:p-8 shadow-2xl text-white transition-colors ${
@@ -275,7 +281,6 @@ export default function Home() {
               : "bg-slate-900 border-slate-800"
           }`}
         >
-          {/* Ambient Glow dinámico */}
           <div
             className={`absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl pointer-events-none ${
               isLiveNow ? "bg-red-600/15" : "bg-cyan-500/10"
@@ -283,7 +288,6 @@ export default function Home() {
           />
 
           <div className="flex flex-col gap-6">
-            {/* Header del Widget */}
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -313,7 +317,6 @@ export default function Home() {
               </div>
 
               <div className="flex items-center gap-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700/50">
-                <span className="text-lg">🏎️</span>
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
                     Circuito
@@ -328,9 +331,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Grid de Métricas + Animación */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              {/* Información y Horarios */}
               <div className="lg:col-span-7 flex flex-col gap-4">
                 <div className="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 backdrop-blur-sm">
                   <p
@@ -338,7 +339,7 @@ export default function Home() {
                       isLiveNow ? "text-red-400" : "text-cyan-400"
                     }`}
                   >
-                    {isLiveNow ? "Tiempo Transcurrido / Estado" : "Cuenta Regresiva"}
+                    {isLiveNow ? "Estado de Sesión" : "Cuenta Regresiva"}
                   </p>
                   <div className="text-2xl font-black tracking-tight text-white">
                     <Countdown targetDate={nextSession.date_start} />
@@ -369,7 +370,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Contenedor del Trazado SVG Real */}
               <div className="lg:col-span-5 h-48 w-full flex items-center justify-center p-3 bg-slate-950/90 rounded-2xl border border-slate-800 shadow-inner relative overflow-hidden">
                 {circuitData ? (
                   <CircuitAnimation
@@ -385,7 +385,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Enlace de Acción */}
             <Link
               href={`/sessions?year=${nextSession.year}&meeting_key=${nextSession.meeting_key}`}
               className={`mt-2 flex items-center justify-center gap-2 w-full py-3 rounded-xl border text-sm font-bold transition-all group ${
@@ -560,106 +559,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-lg">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-          Características
+      {/* Experiencia de Juego / Modalidades del Prode */}
+      <section className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-xl">
+        <h2 className="text-3xl font-bold text-white mb-2">
+          Modalidades del Prode
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                ⚡
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Actualización automática
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Datos sincronizados desde que se publican en la web oficial de F1
-              </p>
-            </div>
+        <p className="text-slate-400 text-sm mb-8">
+          Compite fin de semana a fin de semana en dos torneos paralelos integrados.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-slate-950/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+            <div className="text-2xl">🏆</div>
+            <h3 className="text-lg font-bold text-white">Torneo Oficial</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Sumá puntos acertando a los polemans y los podios exactos tanto en la Carrera Principal como en las Sprint.
+            </p>
           </div>
 
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                💾
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Almacenado en MongoDB
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Acceso rápido sin latencia de API
-              </p>
-            </div>
+          <div className="bg-slate-950/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+            <div className="text-2xl">⏱️</div>
+            <h3 className="text-lg font-bold text-white">Desafío Telemetría</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Premio extra al usuario que más se acerque en milisegundos al tiempo real de la pole position del Gran Premio.
+            </p>
           </div>
 
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                🔄
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Sincronización Automática
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Sin necesidad de actualizar manualmente
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                🎨
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Diseño Responsivo
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Funciona en cualquier dispositivo
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                📊
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Cards Interactivas
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                Información organizada y visualmente atractiva
-              </p>
-            </div>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="shrink-0">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-600 text-white">
-                🔐
-              </div>
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Type-Safe
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                TypeScript para mayor confiabilidad
-              </p>
-            </div>
+          <div className="bg-slate-950/60 border border-slate-800 p-6 rounded-2xl space-y-3">
+            <div className="text-2xl">💥</div>
+            <h3 className="text-lg font-bold text-white">Desafío Caos</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Predice las variables impredecibles del Gran Premio: cantidad total de banderas rojas e imprevistos/DNFs en pista.
+            </p>
           </div>
         </div>
       </section>

@@ -46,7 +46,6 @@ export default async function DriversPage({ searchParams }: PageProps) {
     if (currentCountry === 'all') return true;
     return driver.countryId === currentCountry;
   });
-
   // 4. Ordenar en el servidor
   const sortedDrivers = [...filteredDrivers].sort((a, b) => {
     const statsA = a.stats || {};

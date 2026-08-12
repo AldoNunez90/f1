@@ -20,7 +20,6 @@ export function Navbar() {
     { href: "/teams/chronology", label: "Cronología" },
     { href: "/championship", label: "Campeonatos" },
     { href: "/sessions", label: "Sesiones" },
-    { href: "/prode", label: "Prode" },
   ];
 
     // 2. Determinar el enlace dinámico según el estado de la sesión

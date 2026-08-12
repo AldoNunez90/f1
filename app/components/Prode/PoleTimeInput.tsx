@@ -15,7 +15,7 @@ export function PoleTimeInput({ initialMs = 0, disabled = false, onChange }: Pol
   const initSec = Math.floor((initialMs % 60000) / 1000);
   const initMs = initialMs % 1000;
 
-  const [minutes, setMinutes] = useState(initMin ? String(initMin) : "1");
+  const [minutes, setMinutes] = useState(initMin ? String(initMin) : "");
   const [seconds, setSeconds] = useState(initSec ? String(initSec).padStart(2, "0") : "");
   const [millis, setMillis] = useState(initMs ? String(initMs).padStart(3, "0") : "");
 
@@ -39,7 +39,7 @@ export function PoleTimeInput({ initialMs = 0, disabled = false, onChange }: Pol
         type="number"
         min="0"
         max="9"
-        placeholder="1"
+        placeholder="-"
         value={minutes}
         disabled={disabled}
         onChange={(e) => {
@@ -58,7 +58,7 @@ export function PoleTimeInput({ initialMs = 0, disabled = false, onChange }: Pol
         type="number"
         min="0"
         max="59"
-        placeholder="12"
+        placeholder="--"
         value={seconds}
         disabled={disabled}
         onChange={(e) => {
@@ -77,7 +77,7 @@ export function PoleTimeInput({ initialMs = 0, disabled = false, onChange }: Pol
         type="number"
         min="0"
         max="999"
-        placeholder="345"
+        placeholder="---"
         value={millis}
         disabled={disabled}
         onChange={(e) => {

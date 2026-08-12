@@ -26,7 +26,7 @@ export async function processRaceResultsAndScores(raceId: string) {
   if (!result || !result.isComplete) {
     return { success: false, message: "Los resultados oficiales aún no están disponibles en OpenF1." };
   }
-
+ 
   // 4. Guardar resultado oficial
   await db.collection("results").updateOne(
     { raceId },
@@ -61,23 +61,22 @@ export async function processRaceResultsAndScores(raceId: string) {
 
   const user = await db.collection("users").findOne(queryFilter);
 
-  await db.collection("leaderboard").updateOne(
-    { userId: pred.userId },
-    {
-      $inc: {
-        officialPoints: totalOfficial,
-        chaosPoints: chaosPoints,
-        telemetryWins: bonus > 0 ? 1 : 0,
-        racesPredicted: 1,
-      },
-      $set: {
-        userName: user?.name || user?.email || "Piloto Anónimo",
-        userImage: user?.image || "",
-        updatedAt: new Date(),
-      },
+ await db.collection("leaderboard").updateOne(
+  { userId: pred.userId },
+  {
+    $inc: {
+      officialPoints: totalOfficial,
+      chaosPoints: chaosPoints,
+      telemetryWins: bonus > 0 ? 1 : 0,
     },
-    { upsert: true }
-  );
+    $set: {
+      userName: user?.name || user?.email || "Piloto Anónimo",
+      userImage: user?.image || "",
+      updatedAt: new Date(),
+    },
+  },
+  { upsert: true }
+);
 }
 
   return { success: true, message: "Puntajes procesados y tabla de posiciones actualizada." };
@@ -93,3 +92,21 @@ export async function getLeaderboard() {
 
   return JSON.parse(JSON.stringify(leaderboard));
 }
+
+export async function getLastRaceResult() {
+  const db = (await clientPromise).db();
+  
+  // Buscar el resultado más reciente guardado en la colección results
+  const lastResult = await db
+    .collection("results")
+    .find({ isFinal: true })
+    .sort({ updatedAt: -1 })
+    .limit(1)
+    .toArray();
+
+  if (!lastResult || lastResult.length === 0) return null;
+  return JSON.parse(JSON.stringify(lastResult[0]));
+}
+
+
+

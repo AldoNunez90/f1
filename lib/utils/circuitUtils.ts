@@ -1,9 +1,6 @@
-// @/lib/utils/circuitUtils.ts
+import { circuits } from "@/lib/data/circuits";
 
-/**
- * Parsea el campo 'fastest_lap_time' (ej: "1:19:813 Charles Leclerc (2024)" o "1:07.924...")
- * o usa el 'circuit_length' para devolver una duración de animación escalada en segundos.
- */
+
 export function getCircuitAnimationDuration(
   fastestLapStr?: string | null,
   circuitLengthKm?: number | null,
@@ -32,4 +29,27 @@ export function getCircuitAnimationDuration(
 
   // 3. Fallback por defecto si no hay ningún dato
   return "7.5s";
+}
+
+
+const toSlug = (name?: string) =>
+  name?.toLowerCase().trim().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+export function getFastestLapForRace(circuitName?: string, raceName?: string): string {
+  if (!circuitName && !raceName) return "No disponible";
+
+  const targetSlug = toSlug(circuitName) || toSlug(raceName);
+  if (!targetSlug) return "No disponible";
+
+  const matchedCircuit = circuits.find((c) => {
+    const cNameSlug = toSlug(c.circuit_name);
+    const cShortSlug = toSlug(c.circuit_short_name);
+
+    return (
+      (cNameSlug && (cNameSlug.includes(targetSlug) || targetSlug.includes(cNameSlug))) ||
+      (cShortSlug && (cShortSlug.includes(targetSlug) || targetSlug.includes(cShortSlug)))
+    );
+  });
+
+  return matchedCircuit?.fastest_lap_time || "No disponible";
 }
