@@ -83,7 +83,7 @@ export default function Home() {
   const { sessionQueue, liveSessionKey } = useSessionQueue(sessions, now);
 
   const driverCount = Array.isArray(drivers) ? drivers.length : 0;
-  const raceCount = 24;
+  const championshipCount = 2;
   const sessionCount = sessions.length;
   const newsItems = Array.isArray(news) ? news.slice(0, 3) : [];
 
@@ -148,7 +148,7 @@ export default function Home() {
       title: "Campeonatos",
       description: "Campeonatos de pilotos y equipos actualizados",
       href: "/championship",
-      count: raceCount,
+      count: championshipCount,
       color: "from-red-600 to-red-800",
       icon: "/banderaCuadros.webp",
       loading: driversLoading,
@@ -210,9 +210,9 @@ export default function Home() {
     <div className="space-y-12">
       {/* Hero Section Reestructurado */}
       <section className="min-h-96 relative overflow-hidden rounded-3xl py-8 md:py-12 text-white flex justify-center md:justify-end items-center shadow-2xl">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 hidden md:block ">
           <Image
-            src="/landingImgAlfaRomeo.webp"
+            src="/landingImgAlfaRomeo2.webp"
             alt="F1 HUB - Hero Background"
             fill
             priority
@@ -220,6 +220,17 @@ export default function Home() {
             className="object-cover object-center z-0"
           />
         </div>
+        <div className="absolute inset-0 md:hidden">
+          <Image
+          src="/landingImgMobile.webp"
+          alt="F1 HUB - Hero Background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center z-0"  
+          />
+        </div>
+
 
         <div className="absolute inset-0 bg-linear-to-r from-slate-950/90 via-slate-950/70 to-slate-900/40 z-0 pointer-events-none" />
         <div className="absolute -right-32 -top-32 h-64 w-64 rounded-full bg-cyan-500/20 blur-3xl z-0 pointer-events-none"></div>
@@ -243,18 +254,18 @@ export default function Home() {
               </span>
             </div>
             <p className="text-slate-200  leading-relaxed mb-4">
-              Demuestra tu conocimiento: predice poles, podios, tiempos de vuelta y eventos de carrera para sumar puntos en la tabla general.
+              Demuestra tu conocimiento: predice poles, podios y eventos de carrera para sumar puntos en la tabla general.
             </p>
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/prode"
-                className="w-full py-2.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs text-center transition-all shadow-lg"
+                className="w-full py-2.5 px-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black rounded-xl  text-center transition-all shadow-lg"
               >
-                🏎️ Apostar Ahora
+                Predecir Ahora
               </Link>
               <Link
                 href="/prode/leaderboard"
-                className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs text-center border border-slate-700 transition-all"
+                className="w-full py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl  text-center border border-slate-700 transition-all"
               >
                 🏆 Posiciones
               </Link>
@@ -264,7 +275,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
             <Link
               href="/sessions"
-              className="px-5 py-2.5 bg-slate-800/80 border border-slate-600 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition text-center"
+              className="px-5 py-2.5 bg-slate-800/80 border border-slate-600 text-white  font-bold rounded-xl hover:bg-slate-700 transition text-center"
             >
               Ver Cronograma de Sesiones →
             </Link>

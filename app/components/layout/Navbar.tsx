@@ -39,9 +39,6 @@ export function Navbar() {
          {/* Logo en Navbar */}
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <Image src={"/logo.webp"} alt="F1 HUB Logo" width={80} height={60} loading="eager" />
-            <span className="text-gray-900 dark:text-white font-black uppercase tracking-widest">
-              F1 HUB
-            </span>
           </Link>
 
           {/* Links Desktop */}
