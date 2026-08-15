@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { F1Provider } from "@/lib/context/F1Context";
 import { SessionProvider } from "next-auth/react";
 import  Link  from "next/link"
+import { PageTransitionLoading } from "./components/common/PageTransitionLoading";
 
 // Inicializar servicios del servidor
 initializeAppServices();
@@ -84,6 +85,7 @@ export default function RootLayout({
           </>
         )}
         <SessionProvider>
+            <PageTransitionLoading />
           <F1Provider>
             <Navbar />
             <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
