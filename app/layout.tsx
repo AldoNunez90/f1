@@ -84,8 +84,8 @@ export default function RootLayout({
             </Script>
           </>
         )}
-        <SessionProvider>
             <PageTransitionLoading />
+        <SessionProvider>
           <F1Provider>
             <Navbar />
             <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
