@@ -1,28 +1,27 @@
+// app/components/common/PageTransitionLoading.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
-export function PageTransitionLoading() {
+// 1. Extraemos la lógica a un sub-componente interno
+function LoadingLogic() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   
   const [isLoading, setIsLoading] = useState(false);
   
-  // Guardamos la ruta anterior para compararla durante el render
   const [prevPath, setPrevPath] = useState(pathname);
   const [prevSearch, setPrevSearch] = useState(searchParams?.toString() || "");
 
   const currentSearch = searchParams?.toString() || "";
 
-  // 1. DERIVACIÓN DE ESTADO: Si cambió la ruta o los parámetros, apagamos el loader inmediatamente
   if (pathname !== prevPath || currentSearch !== prevSearch) {
     setPrevPath(pathname);
     setPrevSearch(currentSearch);
     setIsLoading(false);
   }
 
-  // 2. EFECTO: Solo para interceptar clics en el DOM y encender el loading
   useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -38,7 +37,6 @@ export function PageTransitionLoading() {
         const url = new URL(anchor.href);
         const currentUrl = new URL(window.location.href);
 
-        // Si es una navegación a una ruta interna distinta, activamos el loading
         if (
           url.origin === currentUrl.origin && 
           (url.pathname !== currentUrl.pathname || url.search !== currentUrl.search)
@@ -69,5 +67,14 @@ export function PageTransitionLoading() {
         <span className="text-cyan-400 font-bold text-sm uppercase tracking-widest animate-pulse">Cargando...</span>
       </div>
     </div>
+  );
+}
+
+// 2. Exportamos el componente envuelto en Suspense
+export function PageTransitionLoading() {
+  return (
+    <Suspense fallback={null}>
+      <LoadingLogic />
+    </Suspense>
   );
 }
