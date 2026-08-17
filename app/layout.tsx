@@ -36,13 +36,13 @@ export const metadata: Metadata = {
     siteName: "F1 HUB",
     images: [
       {
-        url: "https://www.f1hub.com.ar/og-image-1200x630.jpg", 
+        url: "https://www.f1hub.com.ar/og-image-1200x630.jpeg", 
         width: 1200,
         height: 630,
         alt: "F1 HUB - Portal de Fórmula 1",
       },
       {
-         url: "https://www.f1hub.com.ar/cascoDrivers.png", 
+         url: "https://www.f1hub.com.ar/cascoDrivers.webp", 
         width: 512,
         height: 512,
         alt: "Casco F1 HUB",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: "summary_large_image", 
     title: "F1 HUB",
     description: "Datos, noticias, pilotos, equipos, carreras y resultados de Fórmula 1.",
-    images: ["https://www.f1hub.com.ar/og-image-1200x630.jpg"],
+    images: ["https://www.f1hub.com.ar/og-image-1200x630.jpeg"],
   },
 };
 
