@@ -3,6 +3,36 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import ProdeClient from "./ProdeClient";
 import { getProdePageData } from "@/app/actions/prode";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "PRODE - F1 HUB", 
+
+  description: "Únete al Prode Argentino de F1 Hub. Predice resultados y compite en el ranking.", 
+
+  openGraph: {
+    title: "PRODE - F1 HUB",
+    description: "Participa en el mejor Prode de F1. Predice y gana.",
+    url: "https://www.f1hub.com.ar/prode", 
+    siteName: "F1 HUB",
+    images: [
+      {
+         url: "https://www.f1hub.com.ar/cascoDrivers.webp", 
+        width: 512,
+        height: 512,
+        alt: "Casco F1 HUB",
+      },
+    ],
+    locale: "es_AR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image", 
+    title: "F1 HUB - Prode & Estadísticas",
+    description: "Participa en el mejor Prode de F1. Predice y gana.",
+    images: ["https://www.f1hub.com.ar/og-image-1200x630.jpeg"],
+  },
+};
 
 interface PageProps {
   searchParams: Promise<{ raceId?: string }>;

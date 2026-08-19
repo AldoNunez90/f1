@@ -25,6 +25,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
   preload: false,
 });
+
 export const metadata: Metadata = {
   title: "F1 HUB",
   description:
